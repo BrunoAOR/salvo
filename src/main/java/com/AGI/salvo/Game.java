@@ -22,12 +22,20 @@ public class Game {
 		this.creationDate = creationDate;
 	}
 
+	public long getId() {
+		return id;
+	}
+
 	public Date getCreationDate() {
 		return creationDate;
 	}
 
 	public void setCreationDate(Date creationDate) {
 		this.creationDate = creationDate;
+	}
+
+	public Set<GamePlayer> getGamePlayers() {
+		return gamePlayers;
 	}
 
 	public List<Player> getPlayers() {

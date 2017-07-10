@@ -27,6 +27,10 @@ public class GamePlayer {
 		this.joinDate = joinDate;
 	}
 
+	public long getId() {
+		return id;
+	}
+
 	public Date getJoinDate() {
 		return joinDate;
 	}
