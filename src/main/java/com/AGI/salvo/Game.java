@@ -1,10 +1,10 @@
 package com.AGI.salvo;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 public class Game {
@@ -13,6 +13,8 @@ public class Game {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	private Date creationDate;
+	@OneToMany(mappedBy = "game", fetch = FetchType.EAGER)
+	private Set<GamePlayer> gamePlayers;
 
 	public Game() {}
 
@@ -26,5 +28,9 @@ public class Game {
 
 	public void setCreationDate(Date creationDate) {
 		this.creationDate = creationDate;
+	}
+
+	public List<Player> getPlayers() {
+		return gamePlayers.stream().map(gamePlayer -> gamePlayer.getPlayer()).collect(Collectors.toList());
 	}
 }
