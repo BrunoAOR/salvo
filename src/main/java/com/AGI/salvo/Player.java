@@ -3,6 +3,7 @@ package com.AGI.salvo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,7 +16,7 @@ public class Player {
 	private long id;
 	private String userName;
 	@OneToMany(mappedBy = "player", fetch = FetchType.EAGER)
-	private Set<GamePlayer> gamePlayers;
+	private Set<GamePlayer> gamePlayers =  new HashSet<>();
 
 	public Player() {}
 
@@ -42,5 +43,9 @@ public class Player {
 	@JsonIgnore
 	public List<Game> getGames() {
 		return gamePlayers.stream().map(gamePlayer -> gamePlayer.getGame()).collect(Collectors.toList());
+	}
+
+	public void addGamePlayer(GamePlayer gamePlayer) {
+		gamePlayers.add(gamePlayer);
 	}
 }

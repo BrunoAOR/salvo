@@ -2,6 +2,7 @@ package com.AGI.salvo;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.Set;
 
 @Entity
 public class GamePlayer {
@@ -23,8 +24,11 @@ public class GamePlayer {
 
 	public GamePlayer(Game game, Player player, Date joinDate) {
 		this.game = game;
+		game.addGamePlayer(this);
 		this.player = player;
+		player.addGamePlayer(this);
 		this.joinDate = joinDate;
+
 	}
 
 	public long getId() {
@@ -54,4 +58,5 @@ public class GamePlayer {
 	public void setGame(Game game) {
 		this.game = game;
 	}
+
 }

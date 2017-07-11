@@ -2,6 +2,7 @@ package com.AGI.salvo;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,7 +15,7 @@ public class Game {
 	private long id;
 	private Date creationDate;
 	@OneToMany(mappedBy = "game", fetch = FetchType.EAGER)
-	private Set<GamePlayer> gamePlayers;
+	private Set<GamePlayer> gamePlayers = new HashSet<>();
 
 	public Game() {}
 
@@ -40,5 +41,9 @@ public class Game {
 
 	public List<Player> getPlayers() {
 		return gamePlayers.stream().map(gamePlayer -> gamePlayer.getPlayer()).collect(Collectors.toList());
+	}
+
+	public void addGamePlayer(GamePlayer gamePlayer) {
+		gamePlayers.add(gamePlayer);
 	}
 }
