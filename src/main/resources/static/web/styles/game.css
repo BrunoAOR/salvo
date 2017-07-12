@@ -1,0 +1,62 @@
+body {
+	background-color: #b88751;
+}
+
+.app-grid-cell {
+	height: 30px;
+	width: 30px;
+	border: 1px solid #62351c;
+	vertical-align: middle;
+	text-align: center;
+
+	color: black;
+	font-weight: bold;
+	text-shadow: 0 0 15px white;
+
+	background-color: #b88751;
+	background-size: cover;
+}
+
+.app-grid-frame {
+	border: 0;
+}
+
+.app-boat {
+	background-color: aqua;
+}
+
+.app-grid-terrain-TL {
+	background-image: url("../assets/terrain/terrain_TL.png");
+}
+
+.app-grid-terrain-TC {
+	background-image: url("../assets/terrain/terrain_TC.png");
+}
+
+.app-grid-terrain-TR {
+	background-image: url("../assets/terrain/terrain_TR.png");
+}
+
+.app-grid-terrain-CL {
+	background-image: url("../assets/terrain/terrain_CL.png");
+}
+
+.app-grid-terrain-CC {
+	background-image: url("../assets/terrain/terrain_CC.png");
+}
+
+.app-grid-terrain-CR {
+	background-image: url("../assets/terrain/terrain_CR.png");
+}
+
+.app-grid-terrain-BL {
+	background-image: url("../assets/terrain/terrain_BL.png");
+}
+
+.app-grid-terrain-BC {
+	background-image: url("../assets/terrain/terrain_BC.png");
+}
+
+.app-grid-terrain-BR {
+	background-image: url("../assets/terrain/terrain_BR.png");
+}
