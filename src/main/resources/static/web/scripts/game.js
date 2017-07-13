@@ -1,12 +1,16 @@
+var data;
 var $headerOutlet;
-var grid;
+var shipGrid;
+var salvoGrid;
 var uppercaseASCIIstart = 65;
 
 $(function () {
 	$headerOutlet = $('#app-header-outlet');
+	shipGrid = getNewGrid(10, 10, true);
+	salvoGrid = getNewGrid(10, 10, true);
 
-	grid = getNewGrid(10, 10, true);
-	$('#app-grid-outlet').html(grid);
+	$('#app-ship-grid-outlet').append(shipGrid);
+	$('#app-salvo-grid-outlet').html(salvoGrid);
 
 	var gamePlayerIndex = getUrlSearchObject().gp;
 
@@ -16,14 +20,19 @@ $(function () {
 	}
 });
 
-function onDataReady(data) {
-	console.log("Data retrieved:",data);
-
+function onDataReady(response) {
+	console.log("Data retrieved:",response);
+	
+	data = response;
+	
 	// Setup header
 	displayHeader(data.gamePlayers, getUrlSearchObject().gp);
 
 	// Setup ships
 	displayShips(data.ships);
+	
+	// Setup salvos
+	displaySalvos(data.salvoes);
 }
 
 function onRequestFailed(status) {
@@ -50,9 +59,97 @@ function displayShips(ships) {
 
 function placeShip(ship) {
 	for (var i = 0; i < ship.locations.length; ++i) {
-		var cell = getCellByName(grid, ship.locations[i]);
-		cell.textContent = "S";
+		var shipPiece = document.createElement('div');
+		shipPiece.classList.add('app-ship');
+		
+		var targetCell = getCellByName(shipGrid, ship.locations[i]);
+		targetCell.appendChild(shipPiece);
 	}
+}
+
+function displaySalvos(salvoes) {
+	console.log("Displaying salvos with: ", salvoes);
+	var currentGpId = getUrlSearchObject().gp;
+	var enemyGpId;
+	for (var gpId in salvoes) {
+		if (gpId != currentGpId) {
+			enemyGpId = gpId;
+			break;
+		}
+	}
+	
+	console.log("gpId: " + currentGpId);
+	console.log("enemyGpId: " + enemyGpId);
+	
+	// Place own salvoes
+	placeOwnSalvoes(salvoes[currentGpId]);
+	
+	// Place enemy hits
+	placeEnemySalvoes(salvoes[enemyGpId]);
+}
+
+function placeOwnSalvoes (salvoes) {
+	for (var key in salvoes) {
+		for (var i = 0; i < salvoes[key].length; ++i) {
+			placeOwnShot(salvoes[key][i], key);
+		}
+	}
+}
+
+function placeOwnShot(location, turn) {
+	var shot = document.createElement('div');
+	shot.classList.add('app-shot');
+	if (ownShotHit(location)) {
+		shot.classList.add('app-shot-hit');
+	} else {
+		shot.classList.add('app-shot-failed');
+	}
+	shot.textContent = turn;
+	
+	var targetCell = getCellByName(salvoGrid, location);
+	targetCell.appendChild(shot);
+}
+
+function ownShotHit(location) {
+	return false;
+}
+
+function placeEnemySalvoes(salvoes) {
+	console.log("Placing enemy salvoes:", salvoes);
+	for (var key in salvoes) {
+		for (var i = 0; i < salvoes[key].length; ++i) {
+			placeEnemyShot(salvoes[key][i], key);
+		}
+	}
+}
+
+function placeEnemyShot(location, turn) {
+	var shot = document.createElement('div');
+	shot.classList.add('app-shot');
+	if (enemyShotHit(location)) {
+		shot.classList.add('app-shot-hit');
+	} else {
+		shot.classList.add('app-shot-failed');
+	}
+	shot.textContent = turn;
+	
+	var targetCell = getCellByName(shipGrid, location)
+	targetCell.appendChild(shot);
+}
+
+function enemyShotHit(location) {
+	var locations = getAllShipLocations(data.ships);
+	return locations.includes(location);
+}
+
+function getAllShipLocations(ships) {
+	var locations = [];
+	for (var shipKey in ships) {
+		for (var locationKey in ships[shipKey].locations) {
+			locations.push(ships[shipKey].locations[locationKey]);
+		}
+	}
+	return locations;
 }
 
 function getJSON(url, successCallback, failCallback) {

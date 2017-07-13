@@ -43,6 +43,26 @@ public class SalvoController {
 				.map(ship -> getShipDTO(ship))
 				.collect(Collectors.toList())
 		);
+		// Get the OTHER gameplayer
+		GamePlayer otherGamePlayer = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp != gamePlayer).findAny().orElse(null);
+
+		Map<String, Object> allSalvoes = new HashMap<>();
+		allSalvoes.put(Long.toString(gamePlayerId), getGamePlayerSalvoesDTO(gamePlayer));
+		allSalvoes.put(Long.toString(otherGamePlayer.getId()), getGamePlayerSalvoesDTO(otherGamePlayer));
+
+		dto.put("salvoes", allSalvoes);
+		return dto;
+	}
+
+	private Map<String, Object> getGamePlayerSalvoesDTO(GamePlayer gamePlayer) {
+		Map<String, Object> dto = new LinkedHashMap<>();
+		List<Salvo> sortedSalvos = gamePlayer.getSalvoes()
+				.stream()
+				.sorted((salvo1, salvo2) -> salvo1.getTurn() - salvo2.getTurn())
+				.collect(Collectors.toList());
+		for (Salvo salvo : sortedSalvos) {
+			dto.put(Integer.toString(salvo.getTurn()), salvo.getLocations());
+		}
 		return dto;
 	}
 

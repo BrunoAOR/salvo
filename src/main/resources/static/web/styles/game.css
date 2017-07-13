@@ -1,10 +1,38 @@
+:root {
+	--cell-size: 30px;
+	--url-terrain-TL: url("./assets/terrain/terrain_TL.png");
+	--url-terrain-TC: url("./assets/terrain/terrain_TC.png");
+	--url-terrain-TR: url("./assets/terrain/terrain_TR.png");
+	--url-terrain-CL: url("./assets/terrain/terrain_CL.png");
+	--url-terrain-CC: url("./assets/terrain/terrain_CC.png");
+	--url-terrain-CR: url("./assets/terrain/terrain_CR.png");
+	--url-terrain-BL: url("./assets/terrain/terrain_BL.png");
+	--url-terrain-BC: url("./assets/terrain/terrain_BC.png");
+	--url-terrain-BR: url("./assets/terrain/terrain_BR.png");
+}
+
 body {
 	background-color: #b88751;
 }
 
+.app-text-center {
+	text-align: center;
+}
+
+.app-flex {
+	display: flex;
+	justify-content: center;
+}
+
+.app-grid-container {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+
 .app-grid-cell {
-	height: 30px;
-	width: 30px;
+	position: relative;
+	height: var(--cell-size);
+	width: var(--cell-size);
 	border: 1px solid #62351c;
 	vertical-align: middle;
 	text-align: center;
@@ -17,46 +45,77 @@ body {
 	background-size: cover;
 }
 
+.app-shot {
+	font-size: 80%;
+	margin: 20%;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+  position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	border-radius: var(--cell-size);
+}
+
+.app-shot-hit {
+	background-color: rgba(255, 0, 0, 0.75);
+}
+
+.app-shot-failed {
+	background-color: rgba(0, 0, 0, 0.5);
+}
+
+.app-ship {
+	margin: 10%;
+
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-color: goldenrod;
+}
+
 .app-grid-frame {
 	border: 0;
 }
 
-.app-boat {
-	background-color: aqua;
-}
-
 .app-grid-terrain-TL {
-	background-image: url("../assets/terrain/terrain_TL.png");
+	background-image: var(--url-terrain-TL);
 }
 
 .app-grid-terrain-TC {
-	background-image: url("../assets/terrain/terrain_TC.png");
+	background-image: var(--url-terrain-TC);
 }
 
 .app-grid-terrain-TR {
-	background-image: url("../assets/terrain/terrain_TR.png");
+	background-image: var(--url-terrain-TR);
 }
 
 .app-grid-terrain-CL {
-	background-image: url("../assets/terrain/terrain_CL.png");
+	background-image: var(--url-terrain-CL);
 }
 
 .app-grid-terrain-CC {
-	background-image: url("../assets/terrain/terrain_CC.png");
+	background-image: var(--url-terrain-CC);
 }
 
 .app-grid-terrain-CR {
-	background-image: url("../assets/terrain/terrain_CR.png");
+	background-image: var(--url-terrain-CR);
 }
 
 .app-grid-terrain-BL {
-	background-image: url("../assets/terrain/terrain_BL.png");
+	background-image: var(--url-terrain-BL);
 }
 
 .app-grid-terrain-BC {
-	background-image: url("../assets/terrain/terrain_BC.png");
+	background-image: var(--url-terrain-BC);
 }
 
 .app-grid-terrain-BR {
-	background-image: url("../assets/terrain/terrain_BR.png");
+	background-image: var(--url-terrain-BR);
 }
