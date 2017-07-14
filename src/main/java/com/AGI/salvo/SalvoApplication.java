@@ -26,7 +26,6 @@ public class SalvoApplication {
 			ScoreRepository scoreRepository
 	) {
 		return (String... args) -> {
-
 			// Players
 			Player p1 = new Player("j.bauer@ctu.gov");
 			Player p2 = new Player("c.obrian@ctu.gov");
@@ -193,7 +192,7 @@ public class SalvoApplication {
 			scores.add(new Score(g3, p4, scoreLoss, Date.from(g3.getCreationDate().toInstant().plusSeconds(1800))));
 
 			scores.add(new Score(g4, p2, scoreTie, Date.from(g4.getCreationDate().toInstant().plusSeconds(1800))));
-			scores.add(new Score(g4, p4, scoreTie, Date.from(g4.getCreationDate().toInstant().plusSeconds(1800))));
+			scores.add(new Score(g4, p1, scoreTie, Date.from(g4.getCreationDate().toInstant().plusSeconds(1800))));
 
 			for (Score score : scores) {
 				scoreRepository.save(score);

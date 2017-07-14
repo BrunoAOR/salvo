@@ -158,7 +158,7 @@ function getJSON(url, successCallback, failCallback) {
 		if (this.readyState == 4) {
 			if (this.status == 200) {
 				successCallback(JSON.parse(this.responseText));
-			} else if (this.status >= 400 && this.status < 600) {
+			} else {
 				failCallback(this.status);
 			}
 		}

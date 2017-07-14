@@ -89,4 +89,8 @@ public class GamePlayer {
 	public void addSalvo (Salvo salvo) {
 		salvoes.add(salvo);
 	}
+
+	public Score getScore() {
+		return player.getScore(game);
+	}
 }

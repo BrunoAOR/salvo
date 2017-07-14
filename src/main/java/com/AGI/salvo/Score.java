@@ -9,7 +9,7 @@ public class Score {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 
-	private double score;
+	private double points;
 	private Date finishDate;
 
 	@JoinColumn(name = "game_id")
@@ -22,21 +22,21 @@ public class Score {
 
 	public Score() {}
 
-	public Score(Game game, Player player, double score, Date finishDate) {
+	public Score(Game game, Player player, double points, Date finishDate) {
 		this.game = game;
 		game.addScore(this);
 		this.player = player;
 		player.addScore(this);
-		this.score = score;
+		this.points = points;
 		this.finishDate = finishDate;
 	}
 
-	public double getScore() {
-		return score;
+	public double getPoints() {
+		return points;
 	}
 
-	public void setScore(double score) {
-		this.score = score;
+	public void setPoints(double points) {
+		this.points = points;
 	}
 
 	public Date getFinishDate() {

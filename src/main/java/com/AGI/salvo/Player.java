@@ -54,4 +54,8 @@ public class Player {
 	public void addScore(Score score) {
 		scores.add(score);
 	}
+
+	public Score getScore(Game game) {
+		return scores.stream().filter(score -> score.getGame() == game).findFirst().orElse(null);
+	}
 }
