@@ -24,45 +24,49 @@ public class SalvoController {
 
 	@RequestMapping("/game_view/{gamePlayerId}")
 	public Map<String, Object> getGameViewDTO(@PathVariable long gamePlayerId) {
-		Map<String, Object> dto = new LinkedHashMap<>();
+		final Map<String, Object> dto = new LinkedHashMap<>();
 
 		// Get gamePlayer with the id
-		GamePlayer gamePlayer = gamePlayerRepository.findOne(gamePlayerId);
+		GamePlayer currentGamePlayer = gamePlayerRepository.findOne(gamePlayerId);
+		// Get the OTHER gameplayer
+		Optional<GamePlayer> optionalOtherGamePlayer = currentGamePlayer.getGame().getGamePlayers()
+				.stream()
+				.filter(gp -> gp != currentGamePlayer)
+				.findFirst();
 
 		// Let's get the game info
-		dto.put("id", gamePlayer.getGame().getId());
-		dto.put("created", gamePlayer.getGame().getCreationDate());
-		dto.put("gamePlayers",
-				gamePlayer.getGame().getGamePlayers()
-						.stream()
-						.map(gp -> getGamePlayerDTO(gp))
-						.collect(Collectors.toList())
-		);
-		dto.put("ships", gamePlayer.getShips()
+		dto.put("id", currentGamePlayer.getGame().getId());
+		dto.put("created", currentGamePlayer.getGame().getCreationDate());
+
+		dto.put("currentGamePlayer", getGamePlayerDTO(currentGamePlayer));
+		if (optionalOtherGamePlayer.isPresent()) {
+			dto.put("otherGamePlayer", getGamePlayerDTO(optionalOtherGamePlayer.get()));
+		}
+
+		dto.put("ships", currentGamePlayer.getShips()
 				.stream()
 				.map(ship -> getShipDTO(ship))
 				.collect(Collectors.toList())
 		);
-		// Get the OTHER gameplayer
-		GamePlayer otherGamePlayer = gamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp != gamePlayer).findAny().orElse(null);
+
 
 		Map<String, Object> allSalvoes = new HashMap<>();
-		allSalvoes.put(Long.toString(gamePlayerId), getGamePlayerSalvoesDTO(gamePlayer));
-		allSalvoes.put(Long.toString(otherGamePlayer.getId()), getGamePlayerSalvoesDTO(otherGamePlayer));
+		allSalvoes.put(Long.toString(gamePlayerId), getGamePlayerSalvoesDTO(currentGamePlayer));
 
+		if (optionalOtherGamePlayer.isPresent()) {
+			GamePlayer otherGamePlayer = optionalOtherGamePlayer.get();
+			allSalvoes.put(Long.toString(otherGamePlayer.getId()), getGamePlayerSalvoesDTO(otherGamePlayer));
+		}
 		dto.put("salvoes", allSalvoes);
 		return dto;
 	}
 
 	private Map<String, Object> getGamePlayerSalvoesDTO(GamePlayer gamePlayer) {
 		Map<String, Object> dto = new LinkedHashMap<>();
-		List<Salvo> sortedSalvos = gamePlayer.getSalvoes()
+		gamePlayer.getSalvoes()
 				.stream()
-				.sorted((salvo1, salvo2) -> salvo1.getTurn() - salvo2.getTurn())
-				.collect(Collectors.toList());
-		for (Salvo salvo : sortedSalvos) {
-			dto.put(Integer.toString(salvo.getTurn()), salvo.getLocations());
-		}
+				.sorted(Comparator.comparingInt(Salvo::getTurn))
+				.forEach(salvo -> dto.put(Integer.toString(salvo.getTurn()), salvo.getLocations()));
 		return dto;
 	}
 

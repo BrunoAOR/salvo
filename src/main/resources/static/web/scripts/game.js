@@ -26,29 +26,21 @@ function onDataReady(response) {
 	data = response;
 	
 	// Setup header
-	displayHeader(data.gamePlayers, getUrlSearchObject().gp);
+	displayHeader(data.currentGamePlayer, data.otherGamePlayer);
 
 	// Setup ships
 	displayShips(data.ships);
 	
-	// Setup salvos
-	displaySalvos(data.salvoes);
+	// Setup salvoes
+	displaySalvoes(data.salvoes, data.currentGamePlayer.id, data.otherGamePlayer.id);
 }
 
 function onRequestFailed(status) {
 	console.log("Error: " + status);
 }
 
-function displayHeader(gamePlayers, currentGamePlayerIndex) {
-	var email0 = gamePlayers[0].player.email;
-	var email1 = gamePlayers[1].player.email;
-
-
-	if (gamePlayers[0].id == currentGamePlayerIndex) {
-		$headerOutlet.text(email0 + "(you) vs. " + email1);
-	} else {
-		$headerOutlet.text(email1 + "(you) vs. " + email0);
-	}
+function displayHeader(currentGamePlayer, otherGamePlayer) {
+	$headerOutlet.text(currentGamePlayer.player.email + "(you) vs. " + otherGamePlayer.player.email);
 }
 
 function displayShips(ships) {
@@ -67,74 +59,38 @@ function placeShip(ship) {
 	}
 }
 
-function displaySalvos(salvoes) {
-	console.log("Displaying salvos with: ", salvoes);
-	var currentGpId = getUrlSearchObject().gp;
-	var enemyGpId;
-	for (var gpId in salvoes) {
-		if (gpId != currentGpId) {
-			enemyGpId = gpId;
-			break;
-		}
-	}
-	
-	console.log("gpId: " + currentGpId);
-	console.log("enemyGpId: " + enemyGpId);
-	
+function displaySalvoes(salvoes, currentGpId, otherGpId) {
 	// Place own salvoes
-	placeOwnSalvoes(salvoes[currentGpId]);
+	placeSalvoes(salvoes[currentGpId], salvoGrid, ownShotHit);
 	
 	// Place enemy hits
-	placeEnemySalvoes(salvoes[enemyGpId]);
+	placeSalvoes(salvoes[otherGpId], shipGrid, enemyShotHit);
 }
 
-function placeOwnSalvoes (salvoes) {
+function placeSalvoes(salvoes, targetGrid, checkHitFunction) {
 	for (var key in salvoes) {
 		for (var i = 0; i < salvoes[key].length; ++i) {
-			placeOwnShot(salvoes[key][i], key);
+			placeShot(salvoes[key][i], key, targetGrid, checkHitFunction);
 		}
 	}
 }
 
-function placeOwnShot(location, turn) {
+function placeShot(locationStr, turn, targetGrid, checkHitFunction) {
 	var shot = document.createElement('div');
 	shot.classList.add('app-shot');
-	if (ownShotHit(location)) {
+	if (checkHitFunction(locationStr)) {
 		shot.classList.add('app-shot-hit');
 	} else {
 		shot.classList.add('app-shot-failed');
 	}
 	shot.textContent = turn;
 	
-	var targetCell = getCellByName(salvoGrid, location);
+	var targetCell = getCellByName(targetGrid, locationStr);
 	targetCell.appendChild(shot);
 }
 
 function ownShotHit(location) {
 	return false;
-}
-
-function placeEnemySalvoes(salvoes) {
-	console.log("Placing enemy salvoes:", salvoes);
-	for (var key in salvoes) {
-		for (var i = 0; i < salvoes[key].length; ++i) {
-			placeEnemyShot(salvoes[key][i], key);
-		}
-	}
-}
-
-function placeEnemyShot(location, turn) {
-	var shot = document.createElement('div');
-	shot.classList.add('app-shot');
-	if (enemyShotHit(location)) {
-		shot.classList.add('app-shot-hit');
-	} else {
-		shot.classList.add('app-shot-failed');
-	}
-	shot.textContent = turn;
-	
-	var targetCell = getCellByName(shipGrid, location)
-	targetCell.appendChild(shot);
 }
 
 function enemyShotHit(location) {
