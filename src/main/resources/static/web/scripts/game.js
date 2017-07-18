@@ -2,7 +2,7 @@ var data;
 var $headerOutlet;
 var shipGrid;
 var salvoGrid;
-var uppercaseASCIIstart = 65;
+var uppercaseAsciiStart = 65;
 
 $(function () {
 	$headerOutlet = $('#app-header-outlet');
@@ -26,13 +26,13 @@ function onDataReady(response) {
 	data = response;
 	
 	// Setup header
-	displayHeader(data.currentGamePlayer, data.otherGamePlayer);
+	displayHeader(data.currentGamePlayer, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer : null);
 
 	// Setup ships
 	displayShips(data.ships);
 	
 	// Setup salvoes
-	displaySalvoes(data.salvoes, data.currentGamePlayer.id, data.otherGamePlayer.id);
+	displaySalvoes(data.salvoes, data.currentGamePlayer.id, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer.id : null);
 }
 
 function onRequestFailed(status) {
@@ -40,7 +40,13 @@ function onRequestFailed(status) {
 }
 
 function displayHeader(currentGamePlayer, otherGamePlayer) {
-	$headerOutlet.text(currentGamePlayer.player.email + "(you) vs. " + otherGamePlayer.player.email);
+    var output = currentGamePlayer.player.email + "(you) ";
+    if (otherGamePlayer != null) {
+        output += "vs. " + otherGamePlayer.player.email;
+    } else {
+        output += "waiting for contender...";
+    }
+	$headerOutlet.text(output);
 }
 
 function displayShips(ships) {
@@ -64,7 +70,9 @@ function displaySalvoes(salvoes, currentGpId, otherGpId) {
 	placeSalvoes(salvoes[currentGpId], salvoGrid, ownShotHit);
 	
 	// Place enemy hits
-	placeSalvoes(salvoes[otherGpId], shipGrid, enemyShotHit);
+	if (otherGpId != null) {
+		placeSalvoes(salvoes[otherGpId], shipGrid, enemyShotHit);
+	}
 }
 
 function placeSalvoes(salvoes, targetGrid, checkHitFunction) {
@@ -155,7 +163,7 @@ function getNewGrid(xSize = 1, ySize = 1) {
 				if (x == -1) {
 					cell = document.createElement('th');
 					if (y != yEnd - 1) {
-						cell.textContent = String.fromCharCode(y + uppercaseASCIIstart);
+						cell.textContent = String.fromCharCode(y + uppercaseAsciiStart);
 					}
 				} else {
 					cell = document.createElement('td');
@@ -204,7 +212,7 @@ function getTileBackgroundClassSuffix(x, xStart, xEnd, y, yStart, yEnd) {
 
 function getCellByName(grid, cellName) {
 	var chars = cellName.split('');
-	var rowIdx = chars[0].charCodeAt() - uppercaseASCIIstart + 1;
+	var rowIdx = chars[0].charCodeAt() - uppercaseAsciiStart + 1;
 	var colIdx = chars[1];
 	return getCell(grid, rowIdx, colIdx);
 }
