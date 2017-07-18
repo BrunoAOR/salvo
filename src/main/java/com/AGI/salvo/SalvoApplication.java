@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @SpringBootApplication
 public class SalvoApplication {
@@ -27,10 +28,10 @@ public class SalvoApplication {
 	) {
 		return (String... args) -> {
 			// Players
-			Player p1 = new Player("j.bauer@ctu.gov");
-			Player p2 = new Player("c.obrian@ctu.gov");
-			Player p3 = new Player("kim_bauer@gmail.com");
-			Player p4 = new Player("t.almeida@ctu.gov");
+			final Player p1 = new Player("j.bauer@ctu.gov");
+			final Player p2 = new Player("c.obrian@ctu.gov");
+			final Player p3 = new Player("kim_bauer@gmail.com");
+			final Player p4 = new Player("t.almeida@ctu.gov");
 
 			playerRepository.save(p1);
 			playerRepository.save(p2);
@@ -38,17 +39,17 @@ public class SalvoApplication {
 			playerRepository.save(p4);
 
 			// Games
-			Date date = new Date();
+			final Date date = new Date();
 
-			Game g1 = new Game(date);
 			int gameIndex = 1;
-			Game g2 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g3 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g4 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g5 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g6 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g7 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			Game g8 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g1 = new Game(date);
+			final Game g2 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g3 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g4 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g5 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g6 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g7 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g8 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
 
 			gameRepository.save(g1);
 			gameRepository.save(g2);
@@ -60,29 +61,29 @@ public class SalvoApplication {
 			gameRepository.save(g8);
 
 			// GamePlayers
-			GamePlayer gp1 = new GamePlayer(g1, p1, Date.from(g1.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp2 = new GamePlayer(g1, p2, Date.from(g1.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp1 = new GamePlayer(g1, p1, Date.from(g1.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp2 = new GamePlayer(g1, p2, Date.from(g1.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp3 = new GamePlayer(g2, p1, Date.from(g2.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp4 = new GamePlayer(g2, p2, Date.from(g2.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp3 = new GamePlayer(g2, p1, Date.from(g2.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp4 = new GamePlayer(g2, p2, Date.from(g2.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp5 = new GamePlayer(g3, p2, Date.from(g3.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp6 = new GamePlayer(g3, p4, Date.from(g3.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp5 = new GamePlayer(g3, p2, Date.from(g3.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp6 = new GamePlayer(g3, p4, Date.from(g3.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp7 = new GamePlayer(g4, p2, Date.from(g4.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp8 = new GamePlayer(g4, p1, Date.from(g4.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp7 = new GamePlayer(g4, p2, Date.from(g4.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp8 = new GamePlayer(g4, p1, Date.from(g4.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp9 = new GamePlayer(g5, p4, Date.from(g5.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp10 = new GamePlayer(g5, p1, Date.from(g5.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp9 = new GamePlayer(g5, p4, Date.from(g5.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp10 = new GamePlayer(g5, p1, Date.from(g5.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp11 = new GamePlayer(g6, p3, Date.from(g6.getCreationDate().toInstant().plusSeconds(15)));
-			//GamePlayer gp12 = new GamePlayer(g6, PLAYER NOT YET PRESENT, Date.from(g6.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp11 = new GamePlayer(g6, p3, Date.from(g6.getCreationDate().toInstant().plusSeconds(15)));
+			//final GamePlayer gp12 = new GamePlayer(g6, PLAYER NOT YET PRESENT, Date.from(g6.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp13 = new GamePlayer(g7, p4, Date.from(g7.getCreationDate().toInstant().plusSeconds(15)));
-			//GamePlayer gp14 = new GamePlayer(g7, PLAYER NOT YET PRESENT, Date.from(g7.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp13 = new GamePlayer(g7, p4, Date.from(g7.getCreationDate().toInstant().plusSeconds(15)));
+			//final GamePlayer gp14 = new GamePlayer(g7, PLAYER NOT YET PRESENT, Date.from(g7.getCreationDate().toInstant().plusSeconds(30)));
 
-			GamePlayer gp15 = new GamePlayer(g8, p3, Date.from(g8.getCreationDate().toInstant().plusSeconds(15)));
-			GamePlayer gp16 = new GamePlayer(g8, p4, Date.from(g8.getCreationDate().toInstant().plusSeconds(30)));
+			final GamePlayer gp15 = new GamePlayer(g8, p3, Date.from(g8.getCreationDate().toInstant().plusSeconds(15)));
+			final GamePlayer gp16 = new GamePlayer(g8, p4, Date.from(g8.getCreationDate().toInstant().plusSeconds(30)));
 
 			gamePlayerRepository.save(gp1);
 			gamePlayerRepository.save(gp2);
@@ -101,76 +102,75 @@ public class SalvoApplication {
 			gamePlayerRepository.save(gp15);
 			gamePlayerRepository.save(gp16);
 
-
 			// Ships
-			ArrayList<Ship> ships = new ArrayList<>();
+			final ArrayList<Ship> ships = new ArrayList<>();
 
-			ships.add(new Ship(gp1, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("H2", "H3", "H4"))));
-			ships.add(new Ship(gp1, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("E1", "F1", "G1"))));
-			ships.add(new Ship(gp1, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("B4", "B5"))));
-			ships.add(new Ship(gp2, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp2, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("F1", "F2"))));
+			ships.add(new Ship(gp1, Ship.ShipType.DESTROYER, Arrays.asList("H2", "H3", "H4")));
+			ships.add(new Ship(gp1, Ship.ShipType.SUBMARINE, Arrays.asList("E1", "F1", "G1")));
+			ships.add(new Ship(gp1, Ship.ShipType.PATROL_BOAT, Arrays.asList("B4", "B5")));
+			ships.add(new Ship(gp2, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp2, Ship.ShipType.PATROL_BOAT, Arrays.asList("F1", "F2")));
 
-			ships.add(new Ship(gp3, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp3, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
-			ships.add(new Ship(gp4, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("A2", "A3", "A4"))));
-			ships.add(new Ship(gp4, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("G6", "H6"))));
+			ships.add(new Ship(gp3, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp3, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
+			ships.add(new Ship(gp4, Ship.ShipType.SUBMARINE, Arrays.asList("A2", "A3", "A4")));
+			ships.add(new Ship(gp4, Ship.ShipType.PATROL_BOAT, Arrays.asList("G6", "H6")));
 
-			ships.add(new Ship(gp5, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp5, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
-			ships.add(new Ship(gp6, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("A2", "A3", "A4"))));
-			ships.add(new Ship(gp6, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("G6", "H6"))));
+			ships.add(new Ship(gp5, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp5, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
+			ships.add(new Ship(gp6, Ship.ShipType.SUBMARINE, Arrays.asList("A2", "A3", "A4")));
+			ships.add(new Ship(gp6, Ship.ShipType.PATROL_BOAT, Arrays.asList("G6", "H6")));
 
-			ships.add(new Ship(gp7, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp7, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
-			ships.add(new Ship(gp8, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("A2", "A3", "A4"))));
-			ships.add(new Ship(gp8, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("G6", "H6"))));
+			ships.add(new Ship(gp7, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp7, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
+			ships.add(new Ship(gp8, Ship.ShipType.SUBMARINE, Arrays.asList("A2", "A3", "A4")));
+			ships.add(new Ship(gp8, Ship.ShipType.PATROL_BOAT, Arrays.asList("G6", "H6")));
 
-			ships.add(new Ship(gp9, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp9, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
-			ships.add(new Ship(gp10, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("A2", "A3", "A4"))));
-			ships.add(new Ship(gp10, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("G6", "H6"))));
+			ships.add(new Ship(gp9, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp9, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
+			ships.add(new Ship(gp10, Ship.ShipType.SUBMARINE, Arrays.asList("A2", "A3", "A4")));
+			ships.add(new Ship(gp10, Ship.ShipType.PATROL_BOAT, Arrays.asList("G6", "H6")));
 
-			ships.add(new Ship(gp11, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp11, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
+			ships.add(new Ship(gp11, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp11, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
 
-			ships.add(new Ship(gp15, Ship.ShipType.DESTROYER, new ArrayList<>(Arrays.asList("B5", "C5", "D5"))));
-			ships.add(new Ship(gp15, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("C6", "C7"))));
-			ships.add(new Ship(gp16, Ship.ShipType.SUBMARINE, new ArrayList<>(Arrays.asList("A2", "A3", "A4"))));
-			ships.add(new Ship(gp16, Ship.ShipType.PATROL_BOAT, new ArrayList<>(Arrays.asList("G6", "H6"))));
+			ships.add(new Ship(gp15, Ship.ShipType.DESTROYER, Arrays.asList("B5", "C5", "D5")));
+			ships.add(new Ship(gp15, Ship.ShipType.PATROL_BOAT, Arrays.asList("C6", "C7")));
+			ships.add(new Ship(gp16, Ship.ShipType.SUBMARINE, Arrays.asList("A2", "A3", "A4")));
+			ships.add(new Ship(gp16, Ship.ShipType.PATROL_BOAT, Arrays.asList("G6", "H6")));
 
 			for (Ship ship : ships) {
 				shipRepository.save(ship);
 			}
 
 			// Salvos
-			ArrayList<Salvo> salvoes = new ArrayList<>();
+			final ArrayList<Salvo> salvoes = new ArrayList<>();
 
-			salvoes.add(new Salvo(gp1, 1, new ArrayList<>(Arrays.asList("B5", "C5", "F1"))));
-			salvoes.add(new Salvo(gp2, 1, new ArrayList<>(Arrays.asList("B4", "B5", "B6"))));
-			salvoes.add(new Salvo(gp1, 2, new ArrayList<>(Arrays.asList("F2", "F5"))));
-			salvoes.add(new Salvo(gp2, 2, new ArrayList<>(Arrays.asList("E1", "H3", "A2"))));
+			salvoes.add(new Salvo(gp1, 1, Arrays.asList("B5", "C5", "F1")));
+			salvoes.add(new Salvo(gp2, 1, Arrays.asList("B4", "B5", "B6")));
+			salvoes.add(new Salvo(gp1, 2, Arrays.asList("F2", "F5")));
+			salvoes.add(new Salvo(gp2, 2, Arrays.asList("E1", "H3", "A2")));
 
-			salvoes.add(new Salvo(gp3, 1, new ArrayList<>(Arrays.asList("A2", "A4", "G6"))));
-			salvoes.add(new Salvo(gp4, 1, new ArrayList<>(Arrays.asList("B5", "D5", "C7"))));
-			salvoes.add(new Salvo(gp3, 2, new ArrayList<>(Arrays.asList("A3", "H6"))));
-			salvoes.add(new Salvo(gp4, 2, new ArrayList<>(Arrays.asList("C5", "C6"))));
+			salvoes.add(new Salvo(gp3, 1, Arrays.asList("A2", "A4", "G6")));
+			salvoes.add(new Salvo(gp4, 1, Arrays.asList("B5", "D5", "C7")));
+			salvoes.add(new Salvo(gp3, 2, Arrays.asList("A3", "H6")));
+			salvoes.add(new Salvo(gp4, 2, Arrays.asList("C5", "C6")));
 
-			salvoes.add(new Salvo(gp5, 1, new ArrayList<>(Arrays.asList("G6", "H6", "A4"))));
-			salvoes.add(new Salvo(gp6, 1, new ArrayList<>(Arrays.asList("H1", "H2", "H3"))));
-			salvoes.add(new Salvo(gp5, 2, new ArrayList<>(Arrays.asList("A2", "A3", "D8"))));
-			salvoes.add(new Salvo(gp6, 2, new ArrayList<>(Arrays.asList("E1", "F2", "G3"))));
+			salvoes.add(new Salvo(gp5, 1, Arrays.asList("G6", "H6", "A4")));
+			salvoes.add(new Salvo(gp6, 1, Arrays.asList("H1", "H2", "H3")));
+			salvoes.add(new Salvo(gp5, 2, Arrays.asList("A2", "A3", "D8")));
+			salvoes.add(new Salvo(gp6, 2, Arrays.asList("E1", "F2", "G3")));
 
-			salvoes.add(new Salvo(gp7, 1, new ArrayList<>(Arrays.asList("A3", "A4", "F7"))));
-			salvoes.add(new Salvo(gp8, 1, new ArrayList<>(Arrays.asList("B5", "C6", "H1"))));
-			salvoes.add(new Salvo(gp7, 2, new ArrayList<>(Arrays.asList("A2", "G6", "H6"))));
-			salvoes.add(new Salvo(gp8, 2, new ArrayList<>(Arrays.asList("C5", "C7", "D5"))));
+			salvoes.add(new Salvo(gp7, 1, Arrays.asList("A3", "A4", "F7")));
+			salvoes.add(new Salvo(gp8, 1, Arrays.asList("B5", "C6", "H1")));
+			salvoes.add(new Salvo(gp7, 2, Arrays.asList("A2", "G6", "H6")));
+			salvoes.add(new Salvo(gp8, 2, Arrays.asList("C5", "C7", "D5")));
 
-			salvoes.add(new Salvo(gp9, 1, new ArrayList<>(Arrays.asList("A1", "A2", "A3"))));
-			salvoes.add(new Salvo(gp10, 1, new ArrayList<>(Arrays.asList("B5", "B6", "C7"))));
-			salvoes.add(new Salvo(gp9, 2, new ArrayList<>(Arrays.asList("G6", "G5", "G8"))));
-			salvoes.add(new Salvo(gp10, 2, new ArrayList<>(Arrays.asList("C6", "D6", "E6"))));
-			salvoes.add(new Salvo(gp10, 3, new ArrayList<>(Arrays.asList("H1", "H8"))));
+			salvoes.add(new Salvo(gp9, 1, Arrays.asList("A1", "A2", "A3")));
+			salvoes.add(new Salvo(gp10, 1, Arrays.asList("B5", "B6", "C7")));
+			salvoes.add(new Salvo(gp9, 2, Arrays.asList("G6", "G5", "G8")));
+			salvoes.add(new Salvo(gp10, 2, Arrays.asList("C6", "D6", "E6")));
+			salvoes.add(new Salvo(gp10, 3, Arrays.asList("H1", "H8")));
 
 			for (Salvo salvo : salvoes) {
 				salvoRepository.save(salvo);
@@ -180,7 +180,8 @@ public class SalvoApplication {
 			double scoreWin = 1;
 			double scoreTie = 0.5;
 			double scoreLoss = 0;
-			ArrayList<Score> scores = new ArrayList<>();
+
+			final List<Score> scores = new ArrayList<>();
 
 			scores.add(new Score(g1, p1, scoreWin, Date.from(g1.getCreationDate().toInstant().plusSeconds(1800))));
 			scores.add(new Score(g1, p2, scoreLoss, Date.from(g1.getCreationDate().toInstant().plusSeconds(1800))));
@@ -197,6 +198,7 @@ public class SalvoApplication {
 			for (Score score : scores) {
 				scoreRepository.save(score);
 			}
+
 		};
 	}
 }
