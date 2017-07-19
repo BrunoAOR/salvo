@@ -1,0 +1,17 @@
+package com.AGI.salvo;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class GameServiceImpl implements GameService {
+
+	@Autowired
+	private GameRepository gameRepository;
+
+	public List<Game> findAll() {
+		return gameRepository.findAll();
+	}
+}
