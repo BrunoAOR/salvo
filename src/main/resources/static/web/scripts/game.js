@@ -21,16 +21,16 @@ $(function () {
 });
 
 function onDataReady(response) {
-	console.log("Data retrieved:",response);
-	
+	console.log("Data retrieved:", response);
+
 	data = response;
-	
+
 	// Setup header
 	displayHeader(data.currentGamePlayer, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer : null);
 
 	// Setup ships
 	displayShips(data.ships);
-	
+
 	// Setup salvoes
 	displaySalvoes(data.salvoes, data.currentGamePlayer.id, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer.id : null);
 }
@@ -40,12 +40,12 @@ function onRequestFailed(status) {
 }
 
 function displayHeader(currentGamePlayer, otherGamePlayer) {
-    var output = currentGamePlayer.player.email + "(you) ";
-    if (otherGamePlayer != null) {
-        output += "vs. " + otherGamePlayer.player.email;
-    } else {
-        output += "waiting for contender...";
-    }
+	var output = currentGamePlayer.player.email + "(you) ";
+	if (otherGamePlayer != null) {
+		output += "vs. " + otherGamePlayer.player.email;
+	} else {
+		output += "waiting for contender...";
+	}
 	$headerOutlet.text(output);
 }
 
@@ -59,7 +59,7 @@ function placeShip(ship) {
 	for (var i = 0; i < ship.locations.length; ++i) {
 		var shipPiece = document.createElement('div');
 		shipPiece.classList.add('app-ship');
-		
+
 		var targetCell = getCellByName(shipGrid, ship.locations[i]);
 		targetCell.appendChild(shipPiece);
 	}
@@ -68,7 +68,7 @@ function placeShip(ship) {
 function displaySalvoes(salvoes, currentGpId, otherGpId) {
 	// Place own salvoes
 	placeSalvoes(salvoes[currentGpId], salvoGrid, ownShotHit);
-	
+
 	// Place enemy hits
 	if (otherGpId != null) {
 		placeSalvoes(salvoes[otherGpId], shipGrid, enemyShotHit);
@@ -92,7 +92,7 @@ function placeShot(locationStr, turn, targetGrid, checkHitFunction) {
 		shot.classList.add('app-shot-failed');
 	}
 	shot.textContent = turn;
-	
+
 	var targetCell = getCellByName(targetGrid, locationStr);
 	targetCell.appendChild(shot);
 }
@@ -224,16 +224,16 @@ function getCell(grid, rowIdx, colIdx) {
 function getUrlSearchObject() {
 	var obj = {};
 
-	if (window.location.search == "") {
-		return {};
+	if (window.location.search != "") {
+		// Remove the "?" using substring 1 and then split each query term
+		var terms = window.location.search.substr(1).split('&');
+		var kvPair;
+		for (var i = 0; i < terms.length; ++i) {
+			// Split each term at the "=" to get key-value-pairs
+			kvPair = terms[i].split('=');
+			obj[kvPair[0]] = kvPair[1];
+		}
 	}
-
-	var terms = window.location.search.substr(1).split('&');
-	var kvPair;
-	for (var i = 0; i < terms.length; ++i) {
-		kvPair = terms[i].split('=');
-		obj[kvPair[0]] = kvPair[1];
-	}
-
+	
 	return obj;
 }
