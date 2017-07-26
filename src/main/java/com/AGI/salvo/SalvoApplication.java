@@ -1,10 +1,26 @@
 package com.AGI.salvo;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.web.WebAttributes;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,10 +44,10 @@ public class SalvoApplication {
 	) {
 		return (String... args) -> {
 			// Players
-			final Player p1 = new Player("j.bauer@ctu.gov");
-			final Player p2 = new Player("c.obrian@ctu.gov");
-			final Player p3 = new Player("kim_bauer@gmail.com");
-			final Player p4 = new Player("t.almeida@ctu.gov");
+			final Player p1 = new Player("j.bauer@ctu.gov", "24");
+			final Player p2 = new Player("c.obrian@ctu.gov", "42");
+			final Player p3 = new Player("kim_bauer@gmail.com", "kb");
+			final Player p4 = new Player("t.almeida@ctu.gov", "mole");
 
 			playerRepository.save(p1);
 			playerRepository.save(p2);
@@ -200,5 +216,73 @@ public class SalvoApplication {
 			}
 
 		};
+	}
+
+}
+
+@Configuration
+class WebAuthenticationConfig extends GlobalAuthenticationConfigurerAdapter {
+
+	@Autowired
+	PlayerRepository playerRepository;
+
+	@Bean
+	public UserDetailsService createUserDetailsService() {
+		return new UserDetailsService() {
+			@Override
+			public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+				Player player = playerRepository.findByUserName(username);
+				if (player != null)
+				{
+					return new User(player.getUserName(), player.getPassword(), AuthorityUtils.createAuthorityList("USER"));
+				}
+				else
+				{
+					throw new UsernameNotFoundException("Username " + username + "not found!");
+				}
+			}
+		};
+	}
+}
+
+@EnableWebSecurity
+@Configuration
+class WebAccessConfig extends WebSecurityConfigurerAdapter {
+
+	@Override
+	protected void configure(HttpSecurity httpSecurity) throws Exception {
+
+		// How log in and logout works
+		httpSecurity.formLogin()
+				.usernameParameter("userName")
+				.passwordParameter("password")
+				.loginPage("/api/login");
+		httpSecurity.logout().logoutUrl("/api/logout");
+
+		// Who can see what
+		httpSecurity.authorizeRequests()
+				.antMatchers("/web/game.html").hasAuthority("USER");
+
+		// turn off checking for CSRF tokens
+		httpSecurity.csrf().disable();
+
+		// If user is not authenticated, send an authentication failure response
+		httpSecurity.exceptionHandling().authenticationEntryPoint((request, response, authentication) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED));
+
+		// If login is successful, just clear the flags asking for authentication
+		httpSecurity.formLogin().successHandler((request, response, authentication) -> clearAuthenticationAttributes(request));
+
+		// If login fails, just send an authentication failure response
+		httpSecurity.formLogin().failureHandler((request, response, exception) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED));
+
+		// If logout is successful, just send a success response
+		httpSecurity.logout().logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler());
+	}
+
+	private void clearAuthenticationAttributes(HttpServletRequest request) {
+		HttpSession httpSession = request.getSession(false);
+		if (httpSession != null) {
+			httpSession.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION);
+		}
 	}
 }

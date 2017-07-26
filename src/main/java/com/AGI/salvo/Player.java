@@ -15,6 +15,8 @@ public class Player {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	private String userName;
+	private String password;
+
 	@OneToMany(mappedBy = "player", fetch = FetchType.EAGER)
 	private Set<GamePlayer> gamePlayers =  new HashSet<>();
 	@OneToMany(mappedBy = "player", fetch = FetchType.EAGER)
@@ -22,8 +24,9 @@ public class Player {
 
 	public Player() {}
 
-	public Player(String userName) {
+	public Player(String userName, String password) {
 		this.userName = userName;
+		this.password = password;
 	}
 
 	public long getId() {
@@ -36,6 +39,14 @@ public class Player {
 
 	public void setUserName(String userName) {
 		this.userName = userName;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public Set<GamePlayer> getGamePlayers() {

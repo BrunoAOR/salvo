@@ -1,0 +1,54 @@
+body {
+	background-color: #e5fff6
+}
+
+header {
+	background-color: aquamarine;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	padding-top: 15px;
+	padding-bottom: 15px;
+	display: flex;
+	align-items: center;
+}
+
+header > * {
+	flex-grow: 1;
+}
+
+.app-flex-out {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.app-flexed-stretch {
+	flex-grow: 1;
+}
+
+.app-btn {
+	width: 90px;
+	margin: 0 5px;
+}
+
+.app-btn-sm {
+	padding: 3px 6px;
+}
+
+#app-sign-in-div {
+	position: fixed;
+	z-index: 5;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.app-sign-in-form {
+	
+}

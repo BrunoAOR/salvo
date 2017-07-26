@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 public class ApiUtils {
 
+	// Private constructor to avoid instantiation of the class
 	private ApiUtils() {}
 
 	public static List<Object> getGamesDTO(List<Game> games) {
@@ -47,7 +48,7 @@ public class ApiUtils {
 		return dto;
 	}
 
-	private static Map<String, Object> getGamePlayerSalvoesDTO(GamePlayer gamePlayer) {
+	public static Map<String, Object> getGamePlayerSalvoesDTO(GamePlayer gamePlayer) {
 		Map<String, Object> dto = new LinkedHashMap<>();
 		gamePlayer.getSalvoes()
 				.stream()
@@ -56,7 +57,7 @@ public class ApiUtils {
 		return dto;
 	}
 
-	private static Map<String, Object> getGameDTO(Game game) {
+	public static Map<String, Object> getGameDTO(Game game) {
 		Map<String, Object> dto = new LinkedHashMap<>();
 		dto.put("id", game.getId());
 		dto.put("created", game.getCreationDate());
@@ -69,7 +70,7 @@ public class ApiUtils {
 		return dto;
 	}
 
-	private static Map<String, Object> getGamePlayerDTO(GamePlayer gamePlayer) {
+	public static Map<String, Object> getGamePlayerDTO(GamePlayer gamePlayer) {
 		Map<String, Object> dto = new LinkedHashMap<>();
 		dto.put("id", gamePlayer.getId());
 		dto.put("player", getPlayerDTO(gamePlayer.getPlayer()));
@@ -79,14 +80,14 @@ public class ApiUtils {
 		return dto;
 	}
 
-	private static Map<String, Object> getPlayerDTO(Player player) {
+	public static Map<String, Object> getPlayerDTO(Player player) {
 		Map<String, Object> dto = new LinkedHashMap<>();
 		dto.put("id", player.getId());
 		dto.put("email", player.getUserName());
 		return dto;
 	}
 
-	private static Map<String, Object> getShipDTO(Ship ship) {
+	public static Map<String, Object> getShipDTO(Ship ship) {
 		Map<String, Object> dto = new LinkedHashMap<>();
 		dto.put("type", ship.getType());
 		dto.put("locations", ship.getLocations());

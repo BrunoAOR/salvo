@@ -2,31 +2,96 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Salvo! Games Info</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<meta charset="UTF-8">
+	<title>Salvo! Games Info</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+	<link rel=stylesheet href="styles/games.css">
 </head>
 
 <body>
-<h1>Games:</h1>
-<ol id="games-list">
-</ol>
 
-<h2>Leaderboard:</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Total</th>
-        <th>Won</th>
-        <th>Lost</th>
-        <th>Tied</th>
-    </tr>
-    </thead>
-    <tbody id="leaderboard"></tbody>
-</table>
+	<div id="app-sign-in-div" style="display: none;">
+		<div class="panel app-sign-in-form">
+			<div class="panel-heading">
+				<div class="app-flex-out">
+					<div class="text-center app-flexed-stretch">
+						Sign in...
+					</div>
+					<div>
+						<button type="button" id="app-btn-sign-up" class="btn btn-info app-btn-sm">Sign Up</button>
+					</div>
+				</div>
+			</div>
+			<div class="panel-body">
+				<div id="app-sign-in-input">
+					<div class="form-group">
+						<label for="app-input-email">Email:</label>
+						<input id="app-input-email" type="email" class="form-control">
+						<label for="app-input-password">Password:</label>
+						<input id="app-input-password" type="password" class="form-control">
+					</div>
+					<div id="app-sign-in-info" class="form-group">
 
-<script src="scripts/games.js"></script>
+					</div>
+					<div class="row">
+						<div class="col-xs-6 text-center">
+							<button type="button" id="app-btn-sign-in" class="btn btn-success app-btn">Sign in</button>
+						</div>
+						<div class="col-xs-6 text-center">
+							<button type="button" id="app-btn-sign-cancel" class="btn btn-danger app-btn">Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<header class="container">
+		<div class="app-flex-out">
+			<div id="app-greeting-div">
+
+			</div>
+			<div class="text-center app-flexed-stretch">
+				BATTLESHIP!
+			</div>
+			<div>
+				<button type="button" id="app-btn-show-sign-in" class="btn btn-success app-btn">Sign In</button>
+				<button type="button" id="app-btn-sign-out" class="btn btn-danger app-btn" style="display: none;">Sign Out</button>
+			</div>
+		</div>
+	</header>
+
+	<div class="container">
+		<h1>Games:</h1>
+		<ol id="games-list">
+		</ol>
+
+		<h2>Leaderboard:</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Total</th>
+					<th>Won</th>
+					<th>Lost</th>
+					<th>Tied</th>
+				</tr>
+			</thead>
+			<tbody id="leaderboard-tbody"></tbody>
+		</table>
+
+	</div>
+	<script src="scripts/games.js"></script>
 </body>
 
 </html>

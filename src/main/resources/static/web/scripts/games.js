@@ -1,28 +1,61 @@
 var $gamesList;
-var $leaderBoard;
+var $leaderboardTbody;
 
 $(function () {
 	$gamesList = $('#games-list');
-	$leaderBoard = $('#leaderboard');
-	getJSON('/api/games', onDataReady, onRequestFailed);
+	$leaderboardTbody = $('#leaderboard-tbody');
+	$('#app-btn-show-sign-in').on('click', showSignInForm);
+	$('#app-btn-sign-out').on('click', signOut);
+	$('#app-btn-sign-in').on('click', signIn);
+	$('#app-btn-sign-up').on('click', signUp);
+	$('#app-btn-sign-cancel').on('click', hideSignInForm);
+
+
+	refreshData();
+
 })
 
-function onDataReady(games) {
-	// Build Games List
-	for (var i = 0; i < games.length; ++i) {
-		$gamesList.append(getGameRow(games[i]));
+function refreshData() {
+	getJSON('/api/games', onDataReady, onRequestFailed);
+}
+
+function onDataReady(data) {
+	// Setup and sign in/out buttons
+	if (data.hasOwnProperty("player")) {
+		$('#app-greeting-div').text("Hi " + data.player.email.substring(0, data.player.email.indexOf('@')) + "!");
+		$('#app-btn-sign-out').show(0);
+		$('#app-btn-show-sign-in').hide(0);
+	} else {
+		$('#app-greeting-div').text("");
+		$('#app-btn-sign-out').hide(0);
+		$('#app-btn-show-sign-in').show(0);
 	}
 
+	// Build Games List
+	buildGameList(data.games);
+
 	// Build Leaderboard
-	var sortedLeaderBoardArray = getLeaderBoardArray(games);
-	console.log(sortedLeaderBoardArray);
-	for (var i = 0; i < sortedLeaderBoardArray.length; ++i) {
-		$leaderBoard.append(getLeaderBoardRow(sortedLeaderBoardArray[i]));
-	}
+	buildLeaderboard(data.games);
 }
 
 function onRequestFailed(status) {
 	console.log("Error: " + status);
+}
+
+function buildGameList(games) {
+	$gamesList.empty();
+	for (var i = 0; i < games.length; ++i) {
+		$gamesList.append(getGameRow(games[i]));
+	}
+
+}
+
+function buildLeaderboard(games) {
+	$leaderboardTbody.empty();
+	var sortedLeaderBoardArray = getLeaderBoardArray(games);
+	for (var i = 0; i < sortedLeaderBoardArray.length; ++i) {
+		$leaderboardTbody.append(getLeaderBoardRow(sortedLeaderBoardArray[i]));
+	}
 }
 
 function getGameRow(game) {
@@ -114,4 +147,216 @@ function getJSON(url, successCallback, failCallback) {
 	}
 	request.open("GET", url, true);
 	request.send();
+}
+
+
+// ******************************	//
+// 				SIGN IN RELATED					//
+// ******************************	//
+
+
+function trySignIn(dataObj, successCallback, failureCallback) {
+	url = "/api/login";
+	var data = encondeObjToUrlEncodedFormat(dataObj);
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = function () {
+		if (this.readyState == 4) {
+			if (this.status == 200) {
+				successCallback(this);
+			} else {
+				failureCallback(this);
+			}
+		}
+
+	}
+
+	request.open("POST", url, true);
+	request.setRequestHeader("Content-type", "application/x-www-form-urlencoded; charset=UTF-8");
+	request.send(data);
+}
+
+
+function trySignUp(dataObj, successCallback, failureCallback) {
+	url = "/api/players";
+	// dataObj = {userName: "j.bauer@ctu.gov", password: "24"}
+
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = function () {
+		if (this.readyState == 4) {
+			if (this.status == 201) {
+				successCallback(this);
+			} else {
+				failureCallback(this);
+			}
+		}
+
+	}
+
+	request.open("POST", url, true);
+	request.setRequestHeader("Content-type", "application/json");
+	request.send(JSON.stringify(dataObj));
+}
+
+
+function trySignOut(successCallback, failureCallback) {
+	url = "/api/logout";
+	var request = new XMLHttpRequest();
+	request.onreadystatechange = function () {
+		if (this.readyState == 4) {
+			if (this.status == 200) {
+				successCallback(this);
+			} else {
+				failureCallback(this);
+			}
+		}
+
+	}
+
+	request.open("POST", url, true);
+	request.send();
+}
+
+
+function encondeObjToUrlEncodedFormat(obj) {
+	var enconded = [];
+	for (var key in obj) {
+		enconded.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+	}
+	return enconded.join("&");
+}
+
+
+function showSignInForm() {
+	$('app-sign-in-info').text("");
+	$('#app-sign-in-div').slideDown(500);
+}
+
+
+function hideSignInForm() {
+	$('#app-sign-in-div').slideUp(500);
+}
+
+
+function signIn() {
+	if (signIn.processing == true) {
+		return;
+	}
+
+	var dataObj = getValidatedUserDataObject();
+	if (dataObj != null) {
+		signIn.processing = true;
+		trySignIn(dataObj, onSignIn, onSignInFail);
+	}
+}
+
+
+function signUp() {
+	if (signUp.processing == true) {
+		return;
+	}
+
+	var dataObj = getValidatedUserDataObject();
+	if (dataObj != null) {
+		signUp.processing = true;
+		trySignUp(dataObj, onSignUp, onSignUpFail);
+	}
+}
+
+
+function signOut() {
+	if (signOut.processing == true) {
+		return;
+	}
+
+	signOut.processing = true;
+	trySignOut(onSignOut);
+}
+
+
+function getValidatedUserDataObject(getLast) {
+	if (getLast == true && getValidatedUserDataObject.last != 'undefined' && getValidatedUserDataObject.last != null) {
+		return getValidatedUserDataObject.last;
+	}
+
+	var email = $('#app-input-email').val();
+	var password = $('#app-input-password').val();
+
+	var emailRegEx = /^\S+@\S+\.\S+$/;
+	if (!emailRegEx.test(email)) {
+		$('#app-sign-in-info').text("Invalid email");
+		return null;
+	}
+
+	//	if (password.length < 8 || !/[A-Z]+/.test(password) || !/[a-z]+/.test(password) || !/[0-9]+/.test(password)) {
+	//		console.log("Invalid password");
+	//		return null;
+	//	}
+
+	if (password.length == 0 || /\s+/.test(password)) {
+		$('#app-sign-in-info').text("Invalid password");
+		return null;
+	}
+	getValidatedUserDataObject.last = {
+		userName: email,
+		password: password
+	};
+	return getValidatedUserDataObject.last;
+}
+
+
+function onSignIn(response) {
+	signIn.processing = false;
+	$('#app-sign-in-info').text("Signed in successfully!");
+	refreshData()
+	$('#app-btn-show-sign-in').hide(0);
+	$('#app-btn-sign-out').show(0);
+	hideSignInForm();
+}
+
+
+function onSignInFail(response) {
+	signIn.processing = false;
+	var info = $('#app-sign-in-info');
+	if (response.status == 401) {
+		info.text("Wrong user name or password.");
+	} else {
+		info.text("An error occured. Try again.")
+	}
+}
+
+
+function onSignUp(response) {
+	signUp.processing = false;
+	$('#app-sign-in-info').text("Signed up successfully!");
+
+	trySignIn(getValidatedUserDataObject(true), onSignIn, onSignInFail);
+}
+
+
+function onSignUpFail(response) {
+	signUp.processing = false;
+	var info = $('#app-sign-in-info');
+	if (response.status == 403) {
+		var obj = JSON.parse(response.responseText);
+		info.text("Error: " + (obj.hasOwnProperty("error") ? obj["error"] : response.status));
+	} else {
+		info.text("Error:" + response.status);
+	}
+}
+
+
+function onSignOut(response) {
+	signOut.processing = false;
+	refreshData();
+	$('#app-btn-sign-out').hide(0);
+	$('#app-btn-show-sign-in').show(0);
+
+	console.log("Successful sign out!");
+}
+
+
+function onSignOutFail(response) {
+	signOut.processing = false;
+	console.log("Error:" + response.status);
+
 }
