@@ -52,3 +52,25 @@ header > * {
 .app-sign-in-form {
 	
 }
+
+#games-table {
+	border: 2px solid blue;
+	border-spacing: 20px;
+}
+
+.app-table-row {
+	
+}
+
+.app-cell-player {
+	width : 200px;
+	padding: 10px 5px;
+}
+
+.app-cell-vs {
+	width : 50px;
+}
+
+.app-cell-btn {
+	width: 80px;
+}

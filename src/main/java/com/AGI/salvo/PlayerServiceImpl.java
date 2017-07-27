@@ -3,6 +3,8 @@ package com.AGI.salvo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PlayerServiceImpl implements PlayerService{
 
@@ -10,8 +12,18 @@ public class PlayerServiceImpl implements PlayerService{
 	PlayerRepository playerRepository;
 
 	@Override
+	public Player save(Player player) {
+		return playerRepository.save(player);
+	}
+
+	@Override
 	public Player findOne(long id) {
 		return null;
+	}
+
+	@Override
+	public List<Player> findAll() {
+		return playerRepository.findAll();
 	}
 
 	@Override
@@ -19,8 +31,4 @@ public class PlayerServiceImpl implements PlayerService{
 		return playerRepository.findByUserName(name);
 	}
 
-	@Override
-	public Player save(Player player) {
-		return playerRepository.save(player);
-	}
 }

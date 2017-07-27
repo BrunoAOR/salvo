@@ -1,7 +1,10 @@
 package com.AGI.salvo;
 
+import java.util.List;
+
 public interface PlayerService {
-	Player findOne(long id);
-	Player findByUserName(String name);
 	Player save(Player player);
+	Player findOne(long id);
+	List<Player> findAll();
+	Player findByUserName(String name);
 }

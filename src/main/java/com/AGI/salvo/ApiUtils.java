@@ -8,6 +8,15 @@ public class ApiUtils {
 	// Private constructor to avoid instantiation of the class
 	private ApiUtils() {}
 
+	public static Map<String, Object> getGamesDTO (Player authenticatedPlayer, List<Game> games) {
+		Map<String, Object> mapDTO = new LinkedHashMap<>();
+		if (authenticatedPlayer != null) {
+			mapDTO.put("player", getPlayerDTO(authenticatedPlayer));
+		}
+		mapDTO.put("games", getGamesDTO(games));
+		return mapDTO;
+	}
+
 	public static List<Object> getGamesDTO(List<Game> games) {
 		return games.stream().map(ApiUtils::getGameDTO).collect(Collectors.toList());
 	}

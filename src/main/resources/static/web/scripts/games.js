@@ -1,15 +1,14 @@
-var $gamesList;
+var $gamesTbody;
 var $leaderboardTbody;
 
 $(function () {
-	$gamesList = $('#games-list');
+	$gamesTbody = $('#games-tbody');
 	$leaderboardTbody = $('#leaderboard-tbody');
 	$('#app-btn-show-sign-in').on('click', showSignInForm);
 	$('#app-btn-sign-out').on('click', signOut);
 	$('#app-btn-sign-in').on('click', signIn);
 	$('#app-btn-sign-up').on('click', signUp);
 	$('#app-btn-sign-cancel').on('click', hideSignInForm);
-
 
 	refreshData();
 
@@ -32,7 +31,7 @@ function onDataReady(data) {
 	}
 
 	// Build Games List
-	buildGameList(data.games);
+	buildGameList(data);
 
 	// Build Leaderboard
 	buildLeaderboard(data.games);
@@ -42,12 +41,177 @@ function onRequestFailed(status) {
 	console.log("Error: " + status);
 }
 
-function buildGameList(games) {
-	$gamesList.empty();
-	for (var i = 0; i < games.length; ++i) {
-		$gamesList.append(getGameRow(games[i]));
+function buildGameList(data) {
+	var player = data.hasOwnProperty("player") ? data.player : null;
+	var games = data.games;
+
+	$gamesTbody.empty();
+	var row;
+	var cell;
+	var game;
+	var button;
+	for (var i = -1; i < games.length; ++i) {
+
+		if (i == -1) {
+			if (player != null) {
+				row = document.createElement("tr");
+				cell = appendElementWithTextContent(row, "td", "");
+				cell.setAttribute("colspan", "4");
+				cell.className = "text-center";
+				button = appendElementWithTextContent(cell, "button", "Create game");
+				button.className = "btn btn-success";
+				button.addEventListener("click", function () {
+					tryCreateGame(onCreateGame, onCreateGameFailed);
+				});
+				$gamesTbody.append(row);
+			}
+			continue;
+		}
+
+		game = games[i];
+		row = document.createElement("tr");
+		row.className = "app-table-row";
+
+		// Player 1
+		cell = appendElementWithTextContent(row, "td", game.gamePlayers[0].player.email);
+		cell.className = "text-center app-cell-player";
+
+		// Vs
+		cell = appendElementWithTextContent(row, "td", "VS.");
+		cell.className = "text-center app-cell-vs"
+
+		// Player 2
+		cell = appendElementWithTextContent(row, "td", game.gamePlayers.length == 2 ? game.gamePlayers[1].player.email : "");
+		cell.className = "text-center app-cell-player";
+
+		// Button
+		if (player != null) {
+			cell = appendElementWithTextContent(row, "td", "");
+			cell.className = "text-center app-cell-btn";
+			// No text content for now...
+			button = appendElementWithTextContent(cell, "button", "");
+			button.className = "btn app-btn-sm";
+
+			if (isPlayerInGame(player.id, game)) {
+				button.textContent = "Play on";
+				button.classList.add("btn-success");
+				var gpId = getGamePlayerIdForPlayerIdInGameObj(player.id, game);
+				gpId = gpId != null ? gpId : -1;
+				button.setAttribute("data-gp-id", gpId);
+				button.addEventListener("click", function () {
+					playGame(this.getAttribute("data-gp-id"));
+				});
+			} else if (isGameJoinable(game)) {
+				button.textContent = "Join";
+				button.classList.add("btn-success");
+				button.setAttribute("data-game-id", game.id);
+				button.addEventListener("click", function() {
+					tryJoinGame(this.getAttribute("data-game-id"), onJoinGame,onJoinGameFailed);
+				});
+			} else {
+				button.textContent = "Watch";
+				button.classList.add("btn-primary");
+			}
+
+
+		}
+
+
+		$gamesTbody.append(row);
 	}
 
+
+}
+
+function appendElementWithTextContent(parent, elementName, content) {
+	var element = document.createElement(elementName);
+	element.textContent = content;
+	parent.appendChild(element);
+	return element;
+}
+
+function isPlayerInGame(playerId, gameObj) {
+	for (var gp of gameObj.gamePlayers) {
+		if (gp.player.id == playerId) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function isGameJoinable(gameObj) {
+	return gameObj.gamePlayers.length == 1;
+}
+
+function getGamePlayerIdForPlayerIdInGameObj(playerId, gameObj) {
+	for (var gp of gameObj.gamePlayers) {
+		if (gp.player.id == playerId) {
+			return gp.id;
+		}
+	}
+	return null;
+}
+
+function playGame(gamePlayerId) {
+	location.href = "/web/game.html?gp=" + gamePlayerId;
+}
+
+function tryCreateGame(successCallback, failureCallback) {
+	if (tryCreateGame.processing == true) {
+		return;
+	}
+	
+	tryCreateGame.processing = true;
+	
+	var url = "/api/games";
+	tryPostJson(url, null, successCallback, failureCallback);
+}
+
+function onCreateGame(response) {
+	tryCreateGame.processing = false;
+	var responseObj = JSON.parse(response.responseText);
+	if (responseObj.hasOwnProperty("gpId")) {
+		playGame(responseObj.gpId);
+	}
+}
+
+function onCreateGameFailed(response) {
+	tryCreateGame.processing = false;
+	var message = "Failed to create game!\n";
+	var responseObj = JSON.parse(response.responseText);
+	if (responseObj.hasOwnProperty("error")) {
+		message += responseObj.error;
+	}
+	alert(message);
+}
+
+function tryJoinGame(gameId, successCallback, failureCallback) {
+	if (tryJoinGame.processing == true) {
+		return;
+	}
+	
+	tryJoinGame.processing = true;
+	
+	var url= "/api/games/" + gameId + "/players";
+	tryPostJson(url, null, successCallback, failureCallback);
+}
+
+function onJoinGame(response) {
+	tryJoinGame.processing = false;
+	var responseObj = JSON.parse(response.responseText);
+	if (responseObj.hasOwnProperty("gpId")) {
+		playGame(responseObj.gpId);
+	}
+}
+
+function onJoinGameFailed(response) {
+	tryJoinGame.processing = false;
+	var message = "Failed to join game!\n";
+	var responseObj = JSON.parse(response.responseText);
+	if (responseObj.hasOwnProperty("error")) {
+		message += responseObj.error;
+	}
+	alert(message);
 }
 
 function buildLeaderboard(games) {
@@ -56,20 +220,6 @@ function buildLeaderboard(games) {
 	for (var i = 0; i < sortedLeaderBoardArray.length; ++i) {
 		$leaderboardTbody.append(getLeaderBoardRow(sortedLeaderBoardArray[i]));
 	}
-}
-
-function getGameRow(game) {
-	var $li = $(document.createElement("li"));
-	var content = "";
-	content += new Date(game.created).toLocaleString() + ": ";
-	for (var i = 0; i < game.gamePlayers.length; ++i) {
-		if (i > 0) {
-			content += "  -  ";
-		}
-		content += game.gamePlayers[i].player.email;
-	}
-	$li.text(content);
-	return $li;
 }
 
 function getLeaderBoardArray(gamesObj) {
@@ -156,7 +306,8 @@ function getJSON(url, successCallback, failCallback) {
 
 
 function trySignIn(dataObj, successCallback, failureCallback) {
-	url = "/api/login";
+	var url = "/api/login";
+	
 	var data = encondeObjToUrlEncodedFormat(dataObj);
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function () {
@@ -176,10 +327,7 @@ function trySignIn(dataObj, successCallback, failureCallback) {
 }
 
 
-function trySignUp(dataObj, successCallback, failureCallback) {
-	url = "/api/players";
-	// dataObj = {userName: "j.bauer@ctu.gov", password: "24"}
-
+function tryPostJson(url, dataObj, successCallback, failureCallback) {	
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function () {
 		if (this.readyState == 4) {
@@ -194,12 +342,22 @@ function trySignUp(dataObj, successCallback, failureCallback) {
 
 	request.open("POST", url, true);
 	request.setRequestHeader("Content-type", "application/json");
-	request.send(JSON.stringify(dataObj));
+	if (dataObj != null) {
+		request.send(JSON.stringify(dataObj));
+	} else {
+		request.send();
+	}
+}
+
+function trySignUp(dataObj, successCallback, failureCallback) {
+	// dataObj = {userName: "j.bauer@ctu.gov", password: "24"}
+	var url = "/api/players";
+	tryPostJson(url, dataObj, successCallback, failureCallback);
 }
 
 
 function trySignOut(successCallback, failureCallback) {
-	url = "/api/logout";
+	var url = "/api/logout";
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function () {
 		if (this.readyState == 4) {
@@ -227,13 +385,13 @@ function encondeObjToUrlEncodedFormat(obj) {
 
 
 function showSignInForm() {
-	$('app-sign-in-info').text("");
+	$('#app-sign-in-info').text("");
 	$('#app-sign-in-div').slideDown(500);
 }
 
 
 function hideSignInForm() {
-	$('#app-sign-in-div').slideUp(500);
+	$('#app-sign-in-div').slideUp(500, clearSignInForm);
 }
 
 
@@ -303,6 +461,11 @@ function getValidatedUserDataObject(getLast) {
 	return getValidatedUserDataObject.last;
 }
 
+function clearSignInForm() {
+	$('#app-input-email').val("");
+	$('#app-input-password').val("");
+}
+
 
 function onSignIn(response) {
 	signIn.processing = false;
@@ -315,6 +478,7 @@ function onSignIn(response) {
 
 
 function onSignInFail(response) {
+	console.log(response);
 	signIn.processing = false;
 	var info = $('#app-sign-in-info');
 	if (response.status == 401) {
@@ -328,7 +492,6 @@ function onSignInFail(response) {
 function onSignUp(response) {
 	signUp.processing = false;
 	$('#app-sign-in-info').text("Signed up successfully!");
-
 	trySignIn(getValidatedUserDataObject(true), onSignIn, onSignInFail);
 }
 

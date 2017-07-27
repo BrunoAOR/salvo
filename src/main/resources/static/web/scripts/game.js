@@ -6,11 +6,6 @@ var uppercaseAsciiStart = 65;
 
 $(function () {
 	$headerOutlet = $('#app-header-outlet');
-	shipGrid = getNewGrid(10, 10, true);
-	salvoGrid = getNewGrid(10, 10, true);
-
-	$('#app-ship-grid-outlet').append(shipGrid);
-	$('#app-salvo-grid-outlet').html(salvoGrid);
 
 	var gamePlayerIndex = getUrlSearchObject().gp;
 
@@ -21,9 +16,13 @@ $(function () {
 });
 
 function onDataReady(response) {
-	console.log("Data retrieved:", response);
-
 	data = response;
+	
+	shipGrid = getNewGrid(10, 10, true);
+	salvoGrid = getNewGrid(10, 10, true);
+
+	$('#app-ship-grid-outlet').append(shipGrid);
+	$('#app-salvo-grid-outlet').append(salvoGrid);
 
 	// Setup header
 	displayHeader(data.currentGamePlayer, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer : null);
@@ -35,8 +34,10 @@ function onDataReady(response) {
 	displaySalvoes(data.salvoes, data.currentGamePlayer.id, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer.id : null);
 }
 
-function onRequestFailed(status) {
-	console.log("Error: " + status);
+function onRequestFailed(response) {
+	var responseBody = JSON.parse(response.responseText);
+	$headerOutlet.text("Error " + response.status + ": " + responseBody.error);
+	$('div').filter('.app-flex').hide();
 }
 
 function displayHeader(currentGamePlayer, otherGamePlayer) {
@@ -116,14 +117,14 @@ function getAllShipLocations(ships) {
 	return locations;
 }
 
-function getJSON(url, successCallback, failCallback) {
+function getJSON(url, successCallback, failureCallback) {
 	var request = new XMLHttpRequest();
 	request.onreadystatechange = function () {
 		if (this.readyState == 4) {
 			if (this.status == 200) {
 				successCallback(JSON.parse(this.responseText));
 			} else {
-				failCallback(this.status);
+				failureCallback(this);
 			}
 		}
 

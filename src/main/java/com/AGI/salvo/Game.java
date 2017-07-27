@@ -19,7 +19,9 @@ public class Game {
 	@OneToMany(mappedBy = "game", fetch = FetchType.EAGER)
 	private Set<Score> scores = new HashSet<>();
 
-	public Game() {}
+	public Game() {
+		this.creationDate = creationDate;
+	}
 
 	public Game(Date creationDate) {
 		this.creationDate = creationDate;

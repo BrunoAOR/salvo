@@ -29,6 +29,14 @@ public class GamePlayer {
 
 	public GamePlayer() {}
 
+	public GamePlayer(Game game, Player player) {
+		this.game = game;
+		game.addGamePlayer(this);
+		this.player = player;
+		player.addGamePlayer(this);
+		this.joinDate = new Date();
+	}
+
 	public GamePlayer(Game game, Player player, Date joinDate) {
 		this.game = game;
 		game.addGamePlayer(this);
