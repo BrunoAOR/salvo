@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GameServiceImpl implements GameService {
@@ -30,14 +31,14 @@ public class GameServiceImpl implements GameService {
 	}
 
 	@Override
-	public CreatedGameInfo createGame(Player player) {
+	public Optional<GamePlayer> createGame(Player player) {
 		if (player == null) {
-			return null;
+			return Optional.empty();
 		}
 		Game game = new Game();
 		save(game);
 		GamePlayer gamePlayer = new GamePlayer(game, player);
 		gamePlayerService.save(gamePlayer);
-		return new CreatedGameInfo(game, gamePlayer);
+		return Optional.of(gamePlayer);
 	}
 }

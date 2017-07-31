@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PlayerServiceImpl implements PlayerService{
@@ -31,4 +32,14 @@ public class PlayerServiceImpl implements PlayerService{
 		return playerRepository.findByUserName(name);
 	}
 
+	@Override
+	public SignUpPlayerResult signUpPlayer (Player player) {
+		boolean userNameTaken = findByUserName(player.getUserName()) != null;
+		if (userNameTaken) {
+			return new SignUpPlayerResult(ActionResult.FORBIDDEN, Optional.empty());
+		} else {
+			save(player);
+			return new SignUpPlayerResult(ActionResult.CREATED, Optional.of(player));
+		}
+	}
 }

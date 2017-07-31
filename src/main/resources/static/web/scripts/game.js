@@ -375,7 +375,7 @@ class ShipsInfo {
 
 	// ENTRY POINT for ship placement
 	static setupShipPlacing() {
-		$infoOutlet.html("Time to place your ships!<br>Use WASD to move the ship around the grid and Q&E to rotate it around the bow (front of the ship)");
+		$infoOutlet.html("Time to place your ships!<br>Use WASD to move the ship around the grid, Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
 		setTimeout(function() {
 			document.addEventListener("keydown", ShipsInfo.handleKeyDownEvent);
 			ShipsInfo.requestNextShip();
@@ -444,7 +444,7 @@ class ShipsInfo {
 
 	static requestNextShip() {
 		if (ShipsInfo.shipIndex < ShipsInfo.shipTypesReadable.length) {
-			$infoOutlet.html("Placing ship " + (ShipsInfo.shipIndex + 1) + " out of " + ShipsInfo.shipTypesReadable.length + " (" + ShipsInfo.shipTypesReadable[ShipsInfo.shipIndex] + ")!<br>Use WASD to move the ship around the grid and Q&E to rotate it around the bow (front of the ship)");
+			$infoOutlet.html("Placing ship " + (ShipsInfo.shipIndex + 1) + " out of " + ShipsInfo.shipTypesReadable.length + " (" + ShipsInfo.shipTypesReadable[ShipsInfo.shipIndex] + ")!<br>Use WASD to move the ship around the grid and Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
 			if (ShipsInfo.currentShip == null) {
 				ShipsInfo.currentShip = new Ship(
 					new Point(0, 0),

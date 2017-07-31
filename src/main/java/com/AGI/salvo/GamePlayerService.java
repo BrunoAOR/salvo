@@ -6,4 +6,5 @@ public interface GamePlayerService {
 	GamePlayer save (GamePlayer gamePlayer);
 	GamePlayer findOne(long id);
 	List<GamePlayer> findAll();
+	JoinGameResult JoinGame(Game game, Player player);
 }

@@ -107,7 +107,7 @@ body {
 }
 
 .app-ship-forbidden {
-	background-color: red;
+	background-color: red !important;
 }
 
 .app-grid-frame {

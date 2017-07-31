@@ -7,4 +7,5 @@ public interface PlayerService {
 	Player findOne(long id);
 	List<Player> findAll();
 	Player findByUserName(String name);
+	SignUpPlayerResult signUpPlayer (Player player);
 }

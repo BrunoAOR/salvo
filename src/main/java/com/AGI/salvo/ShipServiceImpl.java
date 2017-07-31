@@ -25,4 +25,26 @@ public class ShipServiceImpl implements ShipService {
 	public List<Ship> findAll() {
 		return shipRepository.findAll();
 	}
+
+	@Override
+	public ActionResult saveShips(List<Ship> ships, GamePlayer gamePlayer) {
+		if (gamePlayer == null) {
+			return ActionResult.UNAUTHORIZED;
+		}
+		if (gamePlayer.getShips().size() != 0){
+			return ActionResult.FORBIDDEN;
+		}
+		if (!ShipUtils.areShipsValid(ships)) {
+			return ActionResult.CONFLICT;
+		}
+
+		// So, if no errors were found, we actually create and save the ships
+		ships.forEach(ship -> {
+			ship.setGamePlayer(gamePlayer);
+			gamePlayer.addShip(ship);
+			save(ship);
+		});
+
+		return ActionResult.CREATED;
+	}
 }
