@@ -65,7 +65,7 @@ public class SalvoApplication {
 			final Game g5 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
 			final Game g6 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
 			final Game g7 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
-			final Game g8 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex++ * 3600)));
+			final Game g8 = new Game(Date.from(date.toInstant().plusSeconds(gameIndex * 3600)));
 
 			gameRepository.save(g1);
 			gameRepository.save(g2);

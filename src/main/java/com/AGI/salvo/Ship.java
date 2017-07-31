@@ -7,7 +7,19 @@ import java.util.List;
 @Entity
 public class Ship {
 
-	public enum ShipType{CARRIER, BATTLESHIP, SUBMARINE, DESTROYER, PATROL_BOAT}
+	public enum ShipType{
+		CARRIER(5), BATTLESHIP(4), SUBMARINE(3), DESTROYER(3), PATROL_BOAT(2);
+
+		private final int length;
+
+		ShipType(int length) {
+			this.length = length;
+		}
+
+		public int getLength() {
+			return length;
+		}
+	}
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

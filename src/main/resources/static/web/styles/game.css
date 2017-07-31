@@ -1,5 +1,6 @@
 :root {
-	--cell-size: 30px;
+	--cell-size: 32px;
+	--cell-offset: -32px;
 	--url-terrain-TL: url("./assets/terrain/terrain_TL.png");
 	--url-terrain-TC: url("./assets/terrain/terrain_TC.png");
 	--url-terrain-TR: url("./assets/terrain/terrain_TR.png");
@@ -12,7 +13,12 @@
 }
 
 body {
+	min-width: 860px;
 	background-color: #b88751;
+}
+
+* {
+	box-sizing: border-box;
 }
 
 .app-text-center {
@@ -52,6 +58,7 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	z-index: 3;
 
   position: absolute;
 	top: 0;
@@ -70,14 +77,37 @@ body {
 }
 
 .app-ship {
-	margin: 10%;
-
 	position: absolute;
 	top: 0;
 	right: 0;
 	bottom: 0;
 	left: 0;
+	z-index: 2;
+}
+
+.app-ship-part {
+	position: absolute;
+	top: var(--cell-size);
+	right: 0;
+	bottom: var(--cell-offset);
+	left: 0;
+	z-index: 2;
+}
+
+.app-ship-active {
+	z-index: 3;
+}
+
+.app-ship.app-ship-active {
 	background-color: goldenrod;
+}
+
+.app-ship-active * {
+	background-color: indigo;
+}
+
+.app-ship-forbidden {
+	background-color: red;
 }
 
 .app-grid-frame {
@@ -118,4 +148,35 @@ body {
 
 .app-grid-terrain-BR {
 	background-image: var(--url-terrain-BR);
+}
+
+.app-ship-front {
+	background-image: url("../assets/ships/Ship_Front.png");
+	background-size: cover;
+}
+
+.app-ship-mid {
+	background-image: url("../assets/ships/Ship_Mid.png");
+	background-size: cover;
+}
+
+.app-ship-back {
+	background-image: url("../assets/ships/Ship_Back.png");
+	background-size: cover;
+}
+
+.app-ship-up {
+	transform: rotate(0deg);
+}
+
+.app-ship-right {
+	transform: rotate(90deg);
+}
+
+.app-ship-down {
+	transform: rotate(180deg);
+}
+
+.app-ship-left {
+	transform: rotate(270deg);
 }

@@ -20,7 +20,7 @@ public class Game {
 	private Set<Score> scores = new HashSet<>();
 
 	public Game() {
-		this.creationDate = creationDate;
+		this.creationDate = new Date();
 	}
 
 	public Game(Date creationDate) {
@@ -44,7 +44,7 @@ public class Game {
 	}
 
 	public List<Player> getPlayers() {
-		return gamePlayers.stream().map(gamePlayer -> gamePlayer.getPlayer()).collect(Collectors.toList());
+		return gamePlayers.stream().map(GamePlayer::getPlayer).collect(Collectors.toList());
 	}
 
 	public void addGamePlayer(GamePlayer gamePlayer) {
@@ -53,5 +53,9 @@ public class Game {
 
 	public void addScore(Score score) {
 		this.scores.add(score);
+	}
+
+	public Score getScore (Player player) {
+		return scores.stream().filter(score -> score.getPlayer() == player).findFirst().orElse(null);
 	}
 }

@@ -2,29 +2,30 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Ship Locations!</title>
+	<meta charset="UTF-8">
+	<title>Ship Locations!</title>
 
-    <link rel="stylesheet" type="text/css" href="styles/game.css">
+	<link rel="stylesheet" type="text/css" href="styles/game.css">
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </head>
 
 <body>
 
-<div id="app-header-outlet" class="app-text-center"></div>
-<div class="app-flex">
-    <div class="app-grid-container">
-        <h3 class="app-text-center">Ships grid</h3>
-        <div id="app-ship-grid-outlet"></div>
-    </div>
-    <div class="app-grid-container">
-        <h3 class="app-text-center">Salvoes grid</h3>
-        <div id="app-salvo-grid-outlet"></div>
-    </div>
-</div>
+	<div id="app-header-outlet" class="app-text-center"></div>
+	<div class="app-flex">
+		<div id="app-ship-grid-container" class="app-grid-container">
+			<h3 class="app-text-center">Ships grid</h3>
+			<div id="app-ship-grid-outlet"></div>
+		</div>
+		<div id="app-salvo-grid-container" class="app-grid-container">
+			<h3 class="app-text-center">Salvoes grid</h3>
+			<div id="app-salvo-grid-outlet"></div>
+		</div>
+	</div>
+	<div id="app-ship-grid-info" class="app-text-center"></div>
 
-<script src="scripts/game.js"></script>
+	<script src="scripts/game.js"></script>
 </body>
 
 </html>

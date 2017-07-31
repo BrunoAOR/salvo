@@ -11,6 +11,9 @@ public class GameServiceImpl implements GameService {
 	@Autowired
 	private GameRepository gameRepository;
 
+	@Autowired
+	private GamePlayerService gamePlayerService;
+
 	@Override
 	public Game save (Game game) {
 		return gameRepository.save(game);
@@ -26,4 +29,15 @@ public class GameServiceImpl implements GameService {
 		return gameRepository.findAll();
 	}
 
+	@Override
+	public CreatedGameInfo createGame(Player player) {
+		if (player == null) {
+			return null;
+		}
+		Game game = new Game();
+		save(game);
+		GamePlayer gamePlayer = new GamePlayer(game, player);
+		gamePlayerService.save(gamePlayer);
+		return new CreatedGameInfo(game, gamePlayer);
+	}
 }

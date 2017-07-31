@@ -21,6 +21,8 @@ public class SalvoController {
 	private GamePlayerService gamePlayerService;
 	@Autowired
 	private PlayerService playerService;
+	@Autowired
+	private ShipService shipService;
 
 	@RequestMapping(path = "/games", method = RequestMethod.GET)
 	public Map<String, Object> getGamesDTO(Authentication auth) {
@@ -31,42 +33,19 @@ public class SalvoController {
 
 	@RequestMapping(path = "/games", method = RequestMethod.POST)
 	public ResponseEntity<Object> createGame(Authentication auth) {
-		ResponseEntity<Object> response;
-		Map<String, Object> mapDTO = new LinkedHashMap<>();
 		Player currentPlayer = getPlayerFromAuthenticationObject(auth);
+		CreatedGameInfo createdGameInfo = null;
 		if (currentPlayer != null) {
 			// Create game and gamePlayer for said game
-			Game game = new Game();
-			gameService.save(game);
-			GamePlayer gamePlayer = new GamePlayer(game, currentPlayer);
-			gamePlayerService.save(gamePlayer);
-
-			mapDTO.put("gpId", gamePlayer.getId());
-			response = new ResponseEntity<Object>(mapDTO, HttpStatus.CREATED);
-		} else {
-			mapDTO.put("error", "Unauthorized");
-			response = new ResponseEntity<Object>(mapDTO, HttpStatus.UNAUTHORIZED);
+			createdGameInfo = gameService.createGame(currentPlayer);
 		}
-		return response;
+		return ApiUtils.getCreatedGameResponse(createdGameInfo);
 	}
 
 	@RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.GET)
 	public ResponseEntity<Object> getListOfPlayerInGameDTO (@PathVariable long gameId) {
-		ResponseEntity<Object> response;
-		Map<String, Object> mapDTO = new LinkedHashMap<>();
-		HttpStatus httpStatus;
-
 		Game game = gameService.findOne(gameId);
-
-		if (game == null) {
-			mapDTO.put("error", "Forbidden: No such game!");
-			httpStatus = HttpStatus.FORBIDDEN;
-		} else {
-			mapDTO.put("players", game.getGamePlayers().stream().map(gp -> ApiUtils.getPlayerDTO(gp.getPlayer())).collect(Collectors.toList()));
-			httpStatus = HttpStatus.OK;
-		}
-		response = new ResponseEntity<Object>(mapDTO, httpStatus);
-		return response;
+		return ApiUtils.getListOfPlayerInGameDTO(game);
 	}
 
 	@RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.POST)
@@ -93,7 +72,91 @@ public class SalvoController {
 			mapDTO.put("gpId", gamePlayer.getId());
 			httpStatus = HttpStatus.CREATED;
 		}
-		response = new ResponseEntity<Object>(mapDTO, httpStatus);
+		response = new ResponseEntity<>(mapDTO, httpStatus);
+		return response;
+	}
+
+	@RequestMapping(path = "/games/players/{gamePlayerId}/ships", method = RequestMethod.GET)
+	public ResponseEntity<Object> getListOfShips(@PathVariable long gamePlayerId, Authentication auth) {
+		ResponseEntity<Object> response;
+		List<Object> ships = new ArrayList<>();
+		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
+		GamePlayer gamePlayer = gamePlayerService.findOne(gamePlayerId);
+		HttpStatus httpStatus;
+
+		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else {
+			gamePlayer.getShips().forEach(ship -> ships.add(ApiUtils.getShipDTO(ship)));
+			httpStatus = HttpStatus.OK;
+		}
+
+		response = new ResponseEntity<>(ships, httpStatus);
+		return response;
+	}
+
+	@RequestMapping(path = "/games/players/{gamePlayerId}/ships", method = RequestMethod.POST)
+	public ResponseEntity<Object> saveListOfShips(@PathVariable long gamePlayerId, @RequestBody List<Ship> receivedShipList, Authentication auth) {
+		ResponseEntity<Object> response;
+		Map<String, Object> mapDTO = new LinkedHashMap<>();
+		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
+		GamePlayer gamePlayer = gamePlayerService.findOne(gamePlayerId);
+		HttpStatus httpStatus;
+
+		if (authenticatedPlayer == null)  {
+			mapDTO.put("error", "Unauthorized: User needs to sign in before trying to add ships!");
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else if (gamePlayer == null) {
+			mapDTO.put("error", "Unauthorized: No such game player exists!");
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else if (gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
+			mapDTO.put("error", "Unauthorized: Player is attempting to add ships for another player!");
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else if (gamePlayer.getShips().size() != 0){
+			mapDTO.put("error", "Forbidden: The player has already added ships for this game!");
+			httpStatus = HttpStatus.FORBIDDEN;
+		} else {
+			boolean lengthsOK = true;
+			boolean overlapOK = true;
+			boolean linkedOk = true;
+			Set<String> seenLocations = new HashSet<>();
+			for (Ship ship : receivedShipList) {
+				if (ship.getType().getLength() != ship.getLocations().size()) {
+					lengthsOK = false;
+					break;
+				}
+				overlapOK = !ApiUtils.hasOverlappedShipLocations(seenLocations, ship);
+				if (!overlapOK) {
+					break;
+				}
+
+				linkedOk = ApiUtils.hasLinkedShipLocations(ship);
+				if (!linkedOk) {
+					break;
+				}
+			}
+			if (!lengthsOK) {
+				mapDTO.put("error", "Forbidden: The ships' locations' length are inconsistent with their types!");
+				httpStatus = HttpStatus.FORBIDDEN;
+			} else if (!overlapOK) {
+				mapDTO.put("error", "Forbidden: The ships' locations overlap with each other!");
+				httpStatus = HttpStatus.FORBIDDEN;
+			} else if (!linkedOk) {
+				mapDTO.put("error", "Forbidden: Each ship's locations must be in a straight line!");
+				httpStatus = HttpStatus.FORBIDDEN;
+			} else {
+				// So, no errors...
+				// Save ships in database
+				receivedShipList.forEach(ship -> {
+					ship.setGamePlayer(gamePlayer);
+					gamePlayer.addShip(ship);
+					shipService.save(ship);
+				});
+				// Nothing is added to the response map.
+				httpStatus = HttpStatus.CREATED;
+			}
+		}
+		response = new ResponseEntity<>(mapDTO, httpStatus);
 		return response;
 	}
 
@@ -102,21 +165,24 @@ public class SalvoController {
 		ResponseEntity<Object> response;
 
 		GamePlayer requestedGamePlayer = gamePlayerService.findOne(gamePlayerId);
-		Player authedPlayer = getPlayerFromAuthenticationObject(auth);
+		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
 
-		Map<String, Object> mapDTO;
-
-		if (requestedGamePlayer.getPlayer().getId() == authedPlayer.getId()) {
+		Map<String, Object> mapDTO = new LinkedHashMap<>();
+		HttpStatus httpStatus;
+		if (authenticatedPlayer == null) {
+			mapDTO.put("error", "User must log in!");
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else if (requestedGamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
+			// The signed in player is requesting for a game_view for a gamePlayer that is not his
+			mapDTO.put("error", "Unauthorized to view game info from this player's perspective!");
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else {
 			// The signed in player is requesting for a game_view for one of his gamePlayers
 			mapDTO = ApiUtils.getGameViewDTO(requestedGamePlayer);
-			response = new ResponseEntity<Object>(mapDTO, HttpStatus.OK);
-		} else {
-			// The signed in player is requesting for a game_view for a gamePlayer that is not his
-			mapDTO = new HashMap<>();
-			mapDTO.put("error", "Unauthorized to view game info from this player's perspective!");
-			response = new ResponseEntity<Object>(mapDTO, HttpStatus.UNAUTHORIZED);
+			httpStatus = HttpStatus.OK;
 		}
 
+		response = new ResponseEntity<>(mapDTO, httpStatus);
 		return response;
 	}
 
@@ -124,20 +190,21 @@ public class SalvoController {
 	public ResponseEntity<Object> SignUpPlayer(@RequestBody Player player) {
 		ResponseEntity<Object> response;
 
-		Map<String, Object> map = new LinkedHashMap<>();
-
 		boolean userNameTaken = playerService.findByUserName(player.getUserName()) != null;
+
+		Map<String, Object> map = new LinkedHashMap<>();
+		HttpStatus httpStatus;
 
 		if (userNameTaken) {
 			map.put("error", "Name in use");
-			response = new ResponseEntity<Object>(map, HttpStatus.FORBIDDEN);
+			httpStatus = HttpStatus.FORBIDDEN;
 		} else {
 			playerService.save(player);
 			map.put("id", player.getId());
 			map.put("email", player.getUserName());
-			response = new ResponseEntity<Object>(map, HttpStatus.CREATED);
+			httpStatus = HttpStatus.CREATED;
 		}
-
+		response = new ResponseEntity<>(map, httpStatus);
 		return response;
 	}
 

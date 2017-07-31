@@ -18,7 +18,7 @@ public class PlayerServiceImpl implements PlayerService{
 
 	@Override
 	public Player findOne(long id) {
-		return null;
+		return playerRepository.findOne(id);
 	}
 
 	@Override
