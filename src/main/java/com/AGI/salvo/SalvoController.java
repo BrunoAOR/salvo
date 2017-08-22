@@ -21,6 +21,8 @@ public class SalvoController {
 	private PlayerService playerService;
 	@Autowired
 	private ShipService shipService;
+	@Autowired
+	private SalvoService salvoService;
 
 	@RequestMapping(path = "/games", method = RequestMethod.GET)
 	public Map<String, Object> getGamesDTO(Authentication auth) {
@@ -68,12 +70,33 @@ public class SalvoController {
 		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
 		GamePlayer gamePlayer = authenticatedPlayer == null ? null : gamePlayerService.findOne(gamePlayerId);
 		ActionResult actionResult;
-		if (!isShipCreationAuthorized(authenticatedPlayer, gamePlayer)) {
+		if (!isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
 			actionResult = ActionResult.UNAUTHORIZED;
 		} else {
 			actionResult = shipService.saveShips(receivedShipList, gamePlayer);
 		}
 		return ApiUtils.getSaveShipsResponse(actionResult);
+	}
+
+	@RequestMapping(path = "/games/players/{gamePlayerId}/salvos", method = RequestMethod.GET)
+	public ResponseEntity<Object> getListOfSalvoes(@PathVariable long gamePlayerId, Authentication auth) {
+		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
+		GamePlayer gamePlayer = gamePlayerService.findOne(gamePlayerId);
+		return ApiUtils.getListOfSalvoesResponse(gamePlayer, authenticatedPlayer);
+	}
+
+	@RequestMapping(path = "/games/players/{gamePlayerId}/salvos", method = RequestMethod.POST)
+	public ResponseEntity<Object> saveSalvo(@PathVariable long gamePlayerId, @RequestBody Salvo receivedSalvo, Authentication auth) {
+
+		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
+		GamePlayer gamePlayer = authenticatedPlayer == null ? null : gamePlayerService.findOne(gamePlayerId);
+		ActionResult actionResult;
+		if (!isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
+			actionResult = ActionResult.UNAUTHORIZED;
+		} else {
+			actionResult = salvoService.saveSalvo(receivedSalvo, gamePlayer);
+		}
+		return ApiUtils.getSaveSalvoResponse(actionResult);
 	}
 
 	@RequestMapping(path = "/game_view/{gamePlayerId}", method = RequestMethod.GET)
@@ -99,7 +122,7 @@ public class SalvoController {
 		return auth == null || auth instanceof AnonymousAuthenticationToken;
 	}
 
-	private boolean isShipCreationAuthorized(Player authenticatedPlayer, GamePlayer gamePlayer) {
+	private boolean isRequestAuthorized(Player authenticatedPlayer, GamePlayer gamePlayer) {
 		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer)  {
 			return false;
 		} else {

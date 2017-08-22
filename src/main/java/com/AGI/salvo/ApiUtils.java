@@ -162,7 +162,7 @@ public class ApiUtils {
 		final List<Object> ships;
 		final HttpStatus httpStatus;
 
-		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
+		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer) {
 			ships = new ArrayList<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
@@ -183,6 +183,20 @@ public class ApiUtils {
 			httpStatus = HttpStatus.OK;
 		}
 		return new ResponseEntity<>(mapDTO, httpStatus);
+	}
+
+	public static ResponseEntity<Object> getListOfSalvoesResponse(GamePlayer gamePlayer, Player authenticatedPlayer) {
+		final Map<String, Object> salvoes;
+		final HttpStatus httpStatus;
+
+		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer) {
+			salvoes = new HashMap<>();
+			httpStatus = HttpStatus.UNAUTHORIZED;
+		} else {
+			salvoes = getGamePlayerSalvoesDTO(gamePlayer);;
+			httpStatus = HttpStatus.OK;
+		}
+		return new ResponseEntity<>(salvoes, httpStatus);
 	}
 
 	public static ResponseEntity<Object> getJoinGameResponse (JoinGameResult joinGameResult) {
@@ -224,7 +238,36 @@ public class ApiUtils {
 				httpStatus = HttpStatus.FORBIDDEN;
 				break;
 			case CONFLICT:
-				mapDTO.put("error", "Conflict: Ships are not properly set up!!");
+				mapDTO.put("error", "Conflict: Ships are not properly set up!");
+				httpStatus = HttpStatus.CONFLICT;
+				break;
+			case CREATED:
+				// Nothing gets added to the mapDTO object
+				httpStatus = HttpStatus.CREATED;
+				break;
+			default:
+				mapDTO.put("error", "Error: Something went wrong, but we have no idea what...");
+				httpStatus = HttpStatus.NOT_FOUND;
+				break;
+		}
+		return new ResponseEntity<>(mapDTO, httpStatus);
+	}
+
+	public static ResponseEntity<Object> getSaveSalvoResponse (ActionResult actionResult) {
+		final Map<String, Object> mapDTO = new LinkedHashMap<>();
+		final HttpStatus httpStatus;
+
+		switch (actionResult) {
+			case UNAUTHORIZED:
+				mapDTO.put("error", "Unauthorized: User can't add ships with current credentials!");
+				httpStatus = HttpStatus.UNAUTHORIZED;
+				break;
+			case FORBIDDEN:
+				mapDTO.put("error", "Forbidden: User may not add further salvo for specified turn!");
+				httpStatus = HttpStatus.FORBIDDEN;
+				break;
+			case CONFLICT:
+				mapDTO.put("error", "Conflict: Salvo locations overlap with previous shots!");
 				httpStatus = HttpStatus.CONFLICT;
 				break;
 			case CREATED:

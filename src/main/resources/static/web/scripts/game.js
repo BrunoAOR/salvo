@@ -3,6 +3,7 @@ let gridSize;
 let gridOffset;
 let $headerOutlet;
 let $infoOutlet;
+let $salvoBtn;
 let shipGrid;
 let salvoGrid;
 let uppercaseAsciiStart = 65;
@@ -10,6 +11,8 @@ let uppercaseAsciiStart = 65;
 $(function () {
 	$headerOutlet = $('#app-header-outlet');
 	$infoOutlet = $('#app-ship-grid-info');
+	$salvoBtn = $('#app-salvo-btn-container').find('button');
+	$salvoBtn.on('click', SalvoPlacer.onSalvoBtnClick);
 	refreshData();
 });
 
@@ -34,8 +37,8 @@ function onDataReady(response) {
 	gridSize = new Point(10, 10);
 	gridOffset = new Point(1, 1);
 
-	shipGrid = getNewGrid(gridSize, gridOffset);
-	salvoGrid = getNewGrid(gridSize, gridOffset);
+	shipGrid = getNewGrid(gridSize, gridOffset, 'app-ship-cell');
+	salvoGrid = getNewGrid(gridSize, gridOffset, 'app-salvo-cell');
 
 	$('#app-ship-grid-outlet').empty().append(shipGrid);
 	$('#app-salvo-grid-outlet').empty().append(salvoGrid);
@@ -47,6 +50,7 @@ function onDataReady(response) {
 	if (data.ships.length > 0) {
 		$('#app-salvo-grid-container').show();
 		displayShips(data.ships);
+		SalvoPlacer.setupSalvoPlacing();
 	} else {
 		$('#app-salvo-grid-container').hide();
 		ShipsInfo.setupShipPlacing();
@@ -176,7 +180,7 @@ function getAllShipLocations(ships) {
 	return locations;
 }
 
-function getNewGrid(gridSize, gridOffset) {
+function getNewGrid(gridSize, gridOffset, extraGridClass) {
 	if (gridSize.x <= 0 || gridSize.y <= 0) {
 		return null;
 	}
@@ -187,8 +191,8 @@ function getNewGrid(gridSize, gridOffset) {
 	// Starting at -1 to add the grid headers
 	let start = -gridOffset.x;
 	// Added +1 for the outer background frame
-	let xEnd = gridSize.x + 1;
-	let yEnd = gridSize.y + 1;
+	let xEnd = gridSize.x + gridOffset.x;
+	let yEnd = gridSize.y + gridOffset.y;
 
 	let row;
 	let cell;
@@ -215,6 +219,12 @@ function getNewGrid(gridSize, gridOffset) {
 			}
 			cell.classList.add('app-grid-cell');
 
+			// Add extraGridClass to internal cells
+			if (extraGridClass != undefined && (typeof extraGridClass) == 'string' && x >= 0 && x < gridSize.x && y >= 0 && y < gridSize.y) {
+				cell.classList.add(extraGridClass);
+				cell.setAttribute('data-address', getCellAddress(x, y));
+			}
+
 			// Add the frame (outer cells) class
 			if (x == -1 || x == xEnd - 1 || y == -1 || y == yEnd - 1) {
 				cell.classList.add('app-grid-frame');
@@ -232,6 +242,10 @@ function getNewGrid(gridSize, gridOffset) {
 
 	return grid;
 
+}
+
+function getCellAddress(x, y) {
+	return "" + String.fromCharCode(y + uppercaseAsciiStart) + (x + 1);
 }
 
 function getTileBackgroundClassSuffix(x, xStart, xEnd, y, yStart, yEnd) {
@@ -334,6 +348,40 @@ function tryPostJson(url, dataObj, successCallback, failureCallback) {
 
 
 // ****************************** //
+//					INFO MESSAGES					//
+// ****************************** //
+
+function displayMessage(htmlMessage) {
+	// Clear any temporary message timeout if it exists
+	if (displayTemporaryMessage.timeoutID != undefined && displayTemporaryMessage.timeoutID != 0) {
+		clearTimeout(displayTemporaryMessage.timeoutID);
+		displayTemporaryMessage.timeoutID = 0;
+	}
+	$infoOutlet.html(htmlMessage);
+}
+
+function displayTemporaryMessage(htmlMessage, waitDuration) {
+	// If no temporary message is being displayed, we store the current message
+	if (displayTemporaryMessage.timeoutID == undefined || displayTemporaryMessage.timeoutID == 0) {
+		displayTemporaryMessage.previousMessage = $infoOutlet.html();
+	} else {
+		// If there was a temporary message, we'll stop its timeout
+		clearTimeout(displayTemporaryMessage.timeoutID);
+		displayTemporaryMessage.timeoutID = 0;
+	}
+	$infoOutlet.html(htmlMessage);
+	displayTemporaryMessage.timeoutID = setTimeout(function () {
+		displayPreviousMessage();
+		displayTemporaryMessage.timeoutID = 0;
+	}, waitDuration);
+}
+
+function displayPreviousMessage() {
+	$infoOutlet.html(displayTemporaryMessage.previousMessage);
+}
+
+
+// ****************************** //
 //					PLACING SHIPS					//
 // ****************************** //
 
@@ -352,31 +400,13 @@ function onSubmitShipsFail(response) {
 	refreshData();
 }
 
-function displayTemporaryMessage(htmlMessage, waitDuration) {
-	// If no temporary message is being displayed, we store the current message
-	if (displayTemporaryMessage.timeoutID == undefined || displayTemporaryMessage.timeoutID == 0) {
-		displayTemporaryMessage.previousMessage = $infoOutlet.html();
-	} else {
-		// If there was a temporary message, we'll stop its timeout
-		clearTimeout(displayTemporaryMessage.timeoutID);
-	}
-	$infoOutlet.html(htmlMessage);
-	displayTemporaryMessage.timeoutID = setTimeout(function () {
-			displayPreviousMessage();
-			displayTemporaryMessage.timeoutID = 0;
-		}, waitDuration);
-}
-
-function displayPreviousMessage() {
-	$infoOutlet.html(displayTemporaryMessage.previousMessage);
-}
-
 class ShipsInfo {
 
 	// ENTRY POINT for ship placement
 	static setupShipPlacing() {
-		$infoOutlet.html("Time to place your ships!<br>Use WASD to move the ship around the grid, Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
-		setTimeout(function() {
+		ShipsInfo.reset();
+		displayMessage("Time to place your ships!<br>Use WASD to move the ship around the grid, Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
+		setTimeout(function () {
 			document.addEventListener("keydown", ShipsInfo.handleKeyDownEvent);
 			ShipsInfo.requestNextShip();
 		}, ShipsInfo.messageDisplayTime * 1.5);
@@ -444,7 +474,7 @@ class ShipsInfo {
 
 	static requestNextShip() {
 		if (ShipsInfo.shipIndex < ShipsInfo.shipTypesReadable.length) {
-			$infoOutlet.html("Placing ship " + (ShipsInfo.shipIndex + 1) + " out of " + ShipsInfo.shipTypesReadable.length + " (" + ShipsInfo.shipTypesReadable[ShipsInfo.shipIndex] + ")!<br>Use WASD to move the ship around the grid and Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
+			displayMessage("Placing ship " + (ShipsInfo.shipIndex + 1) + " out of " + ShipsInfo.shipTypesReadable.length + " (" + ShipsInfo.shipTypesReadable[ShipsInfo.shipIndex] + ")!<br>Use WASD to move the ship around the grid and Q&E to rotate it around the bow (front of the ship) and 'Enter' to place the ship.");
 			if (ShipsInfo.currentShip == null) {
 				ShipsInfo.currentShip = new Ship(
 					new Point(0, 0),
@@ -493,8 +523,7 @@ class ShipsInfo {
 		// Submit to server
 		trySubmitShips(shipsData);
 		ShipsInfo.reset();
-		$infoOutlet.html("All ships placed!");
-		console.log("Finished ship placement!");
+		displayMessage("All ships placed!");
 	}
 
 	static getShipsDataArray() {
@@ -523,6 +552,7 @@ class ShipsInfo {
 
 }
 
+// ShipsInfo constants
 ShipsInfo.shipTypesReadable = ["Carrier", "Battleship", "Submarine", "Destroyer", "Patrol Boat"];
 ShipsInfo.shipTypesObj = ["CARRIER", "BATTLESHIP", "SUBMARINE", "DESTROYER", "PATROL_BOAT"];
 ShipsInfo.shipsLengths = [5, 4, 3, 3, 2];
@@ -537,6 +567,8 @@ ShipsInfo.RotationDirection = {
 	CCW: 1
 }
 ShipsInfo.messageDisplayTime = 1000;
+
+// ShipsInfo variables
 ShipsInfo.placedShips = [];
 ShipsInfo.shipIndex = 0;
 ShipsInfo.currentShip = null;
@@ -783,3 +815,157 @@ class Ship {
 		return locations;
 	}
 }
+
+
+// ****************************** //
+//				LAUNCHING SALVOES				//
+// ****************************** //
+
+function trySubmitSalvo(data) {
+	console.log("Would submit:", data);
+	let gamePlayerId = getUrlSearchObject().gp;
+	tryPostJson("/api/games/players/" + gamePlayerId + "/salvos", data, onSubmitSalvo, onSubmitSalvoFail);
+}
+
+function onSubmitSalvo(response) {
+	refreshData();
+}
+
+function onSubmitSalvoFail(response) {
+	var responseObj = JSON.parse(response.responseText);
+	alert("ERROR!\n" + responseObj.error);
+	refreshData();
+}
+
+class SalvoPlacer {
+
+	// ENTRY POINT for salvo placing
+	static setupSalvoPlacing() {
+		SalvoPlacer.reset();
+		SalvoPlacer.addEvents();
+		SalvoPlacer.updateMessage();
+	}
+
+	static addEvents() {
+		$('.app-salvo-cell').on('click', SalvoPlacer.handleClick);
+	}
+
+	static removeEvents() {
+		$('.app-salvo-cell').off('click', SalvoPlacer.handleClick);
+	}
+
+	static handleClick() {
+		if (SalvoPlacer.cellHasPreviousShot(this)) {
+			displayTemporaryMessage('A previous shot has already been made to that cell!<br>Choose another cell!', SalvoPlacer.messageDisplayTime);
+		} else if (SalvoPlacer.cellHasCurrentShot(this)) {
+			console.log("Removed shot");
+			SalvoPlacer.removeShot(this);
+			SalvoPlacer.updateMessage();
+		} else if (SalvoPlacer.canAddShot()) {
+			console.log("Added shot");
+			SalvoPlacer.addShot(this);
+			SalvoPlacer.updateMessage();
+		} else {
+			displayTemporaryMessage('You have already reached the max amount of shots for this salvo!<br>You may launch the salvo or deselect a shot to select a new position!', SalvoPlacer.messageDisplayTime);
+		}
+		SalvoPlacer.updateButton();
+
+	}
+
+	static cellHasPreviousShot(cellElement) {
+		return $(cellElement).find('.app-shot').length != 0;
+	}
+
+	static cellHasCurrentShot(cellElement) {
+		return $(cellElement).find('.app-shot-selected').length != 0;
+	}
+
+	static canAddShot() {
+		return SalvoPlacer.currentSalvoCount < SalvoPlacer.maxSalvoes;
+	}
+
+	static addShot(cellElement) {
+		let shotDiv = document.createElement('div');
+		shotDiv.classList.add('app-shot-selected');
+		cellElement.appendChild(shotDiv);
+		++SalvoPlacer.currentSalvoCount;
+		SalvoPlacer.addShotLocation(cellElement.getAttribute('data-address'));
+	}
+	
+	static addShotLocation(locationName) {
+		let index = SalvoPlacer.shotLocations.indexOf(locationName);
+		if (index == -1) {
+			SalvoPlacer.shotLocations.push(locationName);
+		}
+	}
+
+	static removeShot(cellElement) {
+		$(cellElement).find('.app-shot-selected').remove();
+		--SalvoPlacer.currentSalvoCount;
+		SalvoPlacer.removeShotLocation(cellElement.getAttribute('data-address'));
+	}
+	
+	static removeShotLocation(locationName) {
+		let index = SalvoPlacer.shotLocations.indexOf(locationName);
+		if (index != -1) {
+			SalvoPlacer.shotLocations.splice(index, 1);
+		}
+		
+	}
+
+	static updateMessage() {
+		let message = "Time to place some shots!";
+
+		if (SalvoPlacer.currentSalvoCount > 0) {
+			message += " You may now launch the salvo if you so desire, but you can place more shots."
+		}
+
+		message += "<br>" + SalvoPlacer.currentSalvoCount + "/" + SalvoPlacer.maxSalvoes + " shots placed.<br>Click on a cell in your Salvoes grid to select the cell for a shot. Click it again to deselect. Once finished with all shots, click on the green button.";
+		displayMessage(message);
+	}
+
+	static updateButton() {
+		if (SalvoPlacer.currentSalvoCount > 0) {
+			$salvoBtn.attr('disabled', false);
+		} else {
+			$salvoBtn.attr('disabled', true);
+		}
+	}
+	
+	static onSalvoBtnClick() {
+		console.log("Clicked button");
+		SalvoPlacer.endSalvoPlacing();
+	}
+
+	// EXIT POINT for salvo placing
+	static endSalvoPlacing() {
+		SalvoPlacer.removeEvents();
+		// Build salvo object
+		let salvoData = SalvoPlacer.getSalvoData(); // some function
+
+		// Submit to server
+		trySubmitSalvo(salvoData);
+		SalvoPlacer.reset();
+		displayMessage("Salvo shot!");
+		$salvoBtn.attr('disabled', true);
+	}
+	
+	static getSalvoData() {
+		return {
+			locations: SalvoPlacer.shotLocations
+		};
+	}
+	
+	static reset() {
+		SalvoPlacer.currentSalvoCount = 0;
+		SalvoPlacer.shotLocations = [];
+	}
+}
+
+// SalvoPlacer constants
+SalvoPlacer.messageDisplayTime = 2000;
+SalvoPlacer.maxSalvoes = 3;
+
+// SalvoPlacer variables
+SalvoPlacer.currentSalvoCount = 0;
+SalvoPlacer.shotLocations = [];
