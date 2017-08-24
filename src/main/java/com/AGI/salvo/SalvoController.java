@@ -23,6 +23,8 @@ public class SalvoController {
 	private ShipService shipService;
 	@Autowired
 	private SalvoService salvoService;
+	@Autowired
+	private ScoreService scoreService;
 
 	@RequestMapping(path = "/games", method = RequestMethod.GET)
 	public Map<String, Object> getGamesDTO(Authentication auth) {
@@ -96,6 +98,13 @@ public class SalvoController {
 		} else {
 			actionResult = salvoService.saveSalvo(receivedSalvo, gamePlayer);
 		}
+
+		if (actionResult == ActionResult.CREATED) {
+			if(ApiUtils.isGameOver(gamePlayer.getGame())) {
+				scoreService.saveScores(gamePlayer.getGame());
+			}
+		}
+
 		return ApiUtils.getSaveSalvoResponse(actionResult);
 	}
 

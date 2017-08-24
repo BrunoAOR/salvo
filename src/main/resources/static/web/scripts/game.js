@@ -7,7 +7,10 @@ let $salvoBtn;
 let $historyTBody;
 let shipGrid;
 let salvoGrid;
+let previousGameState = "";
 let uppercaseAsciiStart = 65;
+let dataRefreshRate = 3000;
+
 
 $(function () {
 	$headerOutlet = $('#app-header-outlet');
@@ -15,6 +18,10 @@ $(function () {
 	$salvoBtn = $('#app-salvo-btn-container').find('button');
 	$historyTBody = $('#app-history-tbody');
 	$salvoBtn.on('click', SalvoPlacer.onSalvoBtnClick);
+
+	gridSize = new Point(10, 10);
+	gridOffset = new Point(1, 1);
+
 	refreshData();
 });
 
@@ -35,33 +42,89 @@ function refreshData() {
 
 function onDataReady(response) {
 	data = response;
-
-	gridSize = new Point(10, 10);
-	gridOffset = new Point(1, 1);
-
+	
+	// Check if the previous game state has changed
+	if (previousGameState == data.state && previousGameState.includes("WAIT")) {
+		// Then only refreshData again later
+		setTimeout(refreshData, dataRefreshRate);
+		return;
+	} else {
+		previousGameState = data.state;
+	}
+	
+	// Clear info-outlet and history table
+	displayMessage("");
+	$historyTBody.empty();
+	
 	shipGrid = getNewGrid(gridSize, gridOffset, 'app-ship-cell');
 	salvoGrid = getNewGrid(gridSize, gridOffset, 'app-salvo-cell');
 
 	$('#app-ship-grid-outlet').empty().append(shipGrid);
 	$('#app-salvo-grid-outlet').empty().append(salvoGrid);
 
+	// Default to hiding the firing button
+	$salvoBtn.hide(0);
+
 	// Setup header
 	displayHeader(data.currentGamePlayer, data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer : null);
+	
+	let otherGamePlayerId = data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer.id : null;
 
-	// Setup ships
-	if (data.ships.length > 0) {
-		$('#app-salvo-grid-container').show();
-		displayShips(data.ships);
-		displayHistoryTable(data.history);
-		SalvoPlacer.setupSalvoPlacing();
-	} else {
-		$('#app-salvo-grid-container').hide();
-		ShipsInfo.setupShipPlacing();
+	// Check state
+	switch (data.state) {
+		case "PLACE_SHIPS":
+			$('#app-salvo-grid-container').hide(0);
+			ShipsInfo.setupShipPlacing();
+			break;
+			
+		case "WAIT_FOR_PLAYER":
+			if (otherGamePlayerId == null) {
+				displayMessage("Waiting for another player to join!");	
+			} else {
+				displayMessage("Waiting for other player to place ships!");
+			}
+			displayShips(data.ships);
+			setTimeout(refreshData, dataRefreshRate);
+			
+			break;
+			
+		case "FIRE":
+			$('#app-salvo-grid-container').show(0);
+			$salvoBtn.show(0);
+			displayShips(data.ships);
+			displayHistoryTable(data.history);
+			
+			// Setup salvoes
+			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			
+			SalvoPlacer.setupSalvoPlacing();
+			break;
+			
+		case "WAIT_FOR_TURN":
+			displayMessage("Waiting for the other player to launch its salvo!");
+			displayShips(data.ships);
+			displayHistoryTable(data.history);
+			
+			// Setup salvoes
+			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			
+			setTimeout(refreshData, dataRefreshRate);
+			
+			break;
+			
+		case "WON":
+		case "LOST":
+		case "TIED":
+			gameOver(data.state);
+			displayShips(data.ships);
+			displayHistoryTable(data.history);
+			
+			// Setup salvoes
+			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			break;
 	}
 
-	// Setup salvoes
-	let otherGamePlayerId = data.hasOwnProperty("otherGamePlayer") ? data.otherGamePlayer.id : null;
-	displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+	
 }
 
 function onRequestFailed(response) {
@@ -78,6 +141,20 @@ function displayHeader(currentGamePlayer, otherGamePlayer) {
 		output += "waiting for contender...";
 	}
 	$headerOutlet.text(output);
+}
+
+function gameOver(result) {
+	switch (result) {
+		case "WON":
+			displayMessage("CONGRATULATIONS!<br>YOU WON!");
+			break;
+		case "TIED":
+			displayMessage("Well, that wasn't so bad...<br>Tied game!");
+			break;
+		case "LOST":
+			displayMessage("OOPS SORRY!<br>You lost!");
+			break;
+	}
 }
 
 function displayShips(ships) {
@@ -187,16 +264,16 @@ function displayHistoryTable(historyObj) {
 	$historyTBody.empty();
 	let currentLeftToSink = ShipsInfo.shipTypesObj.length;
 	let otherLeftToSink = currentLeftToSink;
-	
+
 	let currentEventIndex = 0;
 	let otherEventIndex = 0;
-	
+
 	for (let turn = 1; turn <= historyObj.turn; ++turn) {
 		let tr = document.createElement('tr');
-		
+
 		// Turn number
-		appendElementWithTextContent(tr, 'th', turn); 
-		
+		appendElementWithTextContent(tr, 'th', turn);
+
 		let actionMessage;
 		let events;
 		// YOU columns
@@ -209,38 +286,37 @@ function displayHistoryTable(historyObj) {
 				if (actionMessage.length > 0) {
 					actionMessage += '<br>';
 				}
-				
+
 				if (event.type == 'sunk') {
 					actionMessage += '<span class= "app-history-highlight">'
 				}
-				
+
 				actionMessage += ShipsInfo.getReadableName(event.ship);
 				actionMessage += ' ' + event.type;
 				if (event.type == 'hit' && event.count > 1) {
 					actionMessage += ' ' + event.count + ' times';
 				}
 				actionMessage += '!';
-				
+
 				if (event.type == 'sunk') {
 					actionMessage += '</span>';
 					--currentLeftToSink;
 				}
-				
+
 				++currentEventIndex;
-			}
-			else {
+			} else {
 				break;
 			}
 		}
-		
+
 		if (actionMessage == "") {
 			actionMessage = "Did nothing...";
 		}
 		appendElementWithHtmlContent(tr, 'td', actionMessage);
-		
+
 		// Left to sink
 		appendElementWithTextContent(tr, 'td', currentLeftToSink);
-		
+
 		// ENEMY columns
 		// Actions
 		actionMessage = "";
@@ -251,26 +327,25 @@ function displayHistoryTable(historyObj) {
 				if (actionMessage.length > 0) {
 					actionMessage += '<br>';
 				}
-				
+
 				if (event.type == 'sunk') {
 					actionMessage += '<span class= "app-history-highlight">'
 				}
-				
+
 				actionMessage += ShipsInfo.getReadableName(event.ship);
 				actionMessage += " " + event.type;
 				if (event.type == "hit" && event.count > 1) {
 					actionMessage += " " + event.count + " times";
 				}
 				actionMessage += "!";
-				
+
 				if (event.type == "sunk") {
 					actionMessage += '</span>';
 					--otherLeftToSink;
 				}
-				
+
 				++otherEventIndex;
-			}
-			else {
+			} else {
 				break;
 			}
 		}
@@ -278,13 +353,13 @@ function displayHistoryTable(historyObj) {
 			actionMessage = "Did nothing...";
 		}
 		appendElementWithHtmlContent(tr, 'td', actionMessage);
-		
+
 		// Left to sink
 		appendElementWithTextContent(tr, 'td', otherLeftToSink);
-		
+
 		$historyTBody.append(tr);
 	}
-	
+
 }
 
 function appendElementWithTextContent(parent, elementName, content) {
@@ -620,7 +695,6 @@ class ShipsInfo {
 
 	static saveShip() {
 		if (ShipsInfo.currentShip.isValid) {
-			console.log("Accepted!");
 			ShipsInfo.placedShips.push(ShipsInfo.currentShip);
 			let shipLocations = ShipsInfo.currentShip.getLocations();
 			for (let i = 0; i < shipLocations.length; ++i) {
@@ -669,7 +743,7 @@ class ShipsInfo {
 		ShipsInfo.currentShip = null;
 		ShipsInfo.takenLocations = [];
 	}
-	
+
 	static getReadableName(shipType) {
 		let index = ShipsInfo.shipTypesObj.indexOf(shipType);
 		if (index == -1) {
@@ -909,7 +983,6 @@ class Ship {
 	}
 
 	isLocationInGrid(point) {
-		console.log();
 		if (point.x < 0 || point.x >= this.gridSize.x || point.y < 0 || point.y >= this.gridSize.y) {
 			return false;
 		}
@@ -950,7 +1023,6 @@ class Ship {
 // ****************************** //
 
 function trySubmitSalvo(data) {
-	console.log("Would submit:", data);
 	let gamePlayerId = getUrlSearchObject().gp;
 	tryPostJson("/api/games/players/" + gamePlayerId + "/salvos", data, onSubmitSalvo, onSubmitSalvoFail);
 }
@@ -986,11 +1058,9 @@ class SalvoPlacer {
 		if (SalvoPlacer.cellHasPreviousShot(this)) {
 			displayTemporaryMessage('A previous shot has already been made to that cell!<br>Choose another cell!', SalvoPlacer.messageDisplayTime);
 		} else if (SalvoPlacer.cellHasCurrentShot(this)) {
-			console.log("Removed shot");
 			SalvoPlacer.removeShot(this);
 			SalvoPlacer.updateMessage();
 		} else if (SalvoPlacer.canAddShot()) {
-			console.log("Added shot");
 			SalvoPlacer.addShot(this);
 			SalvoPlacer.updateMessage();
 		} else {
@@ -1019,7 +1089,7 @@ class SalvoPlacer {
 		++SalvoPlacer.currentSalvoCount;
 		SalvoPlacer.addShotLocation(cellElement.getAttribute('data-address'));
 	}
-	
+
 	static addShotLocation(locationName) {
 		let index = SalvoPlacer.shotLocations.indexOf(locationName);
 		if (index == -1) {
@@ -1032,13 +1102,13 @@ class SalvoPlacer {
 		--SalvoPlacer.currentSalvoCount;
 		SalvoPlacer.removeShotLocation(cellElement.getAttribute('data-address'));
 	}
-	
+
 	static removeShotLocation(locationName) {
 		let index = SalvoPlacer.shotLocations.indexOf(locationName);
 		if (index != -1) {
 			SalvoPlacer.shotLocations.splice(index, 1);
 		}
-		
+
 	}
 
 	static updateMessage() {
@@ -1059,9 +1129,8 @@ class SalvoPlacer {
 			$salvoBtn.attr('disabled', true);
 		}
 	}
-	
+
 	static onSalvoBtnClick() {
-		console.log("Clicked button");
 		SalvoPlacer.endSalvoPlacing();
 	}
 
@@ -1077,14 +1146,15 @@ class SalvoPlacer {
 		displayMessage("Salvo shot!");
 		$salvoBtn.attr('disabled', true);
 	}
-	
+
 	static getSalvoData() {
 		return {
 			locations: SalvoPlacer.shotLocations
 		};
 	}
-	
+
 	static reset() {
+		$('.app-shot-selected').remove();
 		SalvoPlacer.currentSalvoCount = 0;
 		SalvoPlacer.shotLocations = [];
 	}
@@ -1092,7 +1162,7 @@ class SalvoPlacer {
 
 // SalvoPlacer constants
 SalvoPlacer.messageDisplayTime = 2000;
-SalvoPlacer.maxSalvoes = 3;
+SalvoPlacer.maxSalvoes = 5;
 
 // SalvoPlacer variables
 SalvoPlacer.currentSalvoCount = 0;

@@ -58,6 +58,7 @@ public class ApiUtils {
 		dto.put("id", currentGamePlayer.getGame().getId());
 		dto.put("created", currentGamePlayer.getGame().getCreationDate());
 
+
 		dto.put("currentGamePlayer", getGamePlayerDTO(currentGamePlayer));
 
 		optionalOtherGamePlayer.ifPresent(gamePlayer -> dto.put("otherGamePlayer", getGamePlayerDTO(gamePlayer)));
@@ -76,7 +77,16 @@ public class ApiUtils {
 
 		dto.put("salvoes", allSalvoes);
 
-		dto.put("history", getHistoryDTO(currentGamePlayer, optionalOtherGamePlayer.orElse(null)));
+		final Map<String,Object> history = getHistoryDTO(currentGamePlayer, optionalOtherGamePlayer.orElse(null));
+		int sunkByCurrent = 0;
+		int sunkByOther = 0;
+		if (history.keySet().size() != 0) {
+			sunkByCurrent = ((List<String>)((Map<String,Object>)history.get("current")).get("allSunk")).size();
+			sunkByOther = ((List<String>)((Map<String,Object>)history.get("other")).get("allSunk")).size();
+		}
+
+		dto.put("history", history);
+		dto.put("state", getGameState(currentGamePlayer,  optionalOtherGamePlayer.orElse(null), sunkByCurrent, sunkByOther));
 
 		return dto;
 	}
@@ -109,6 +119,7 @@ public class ApiUtils {
 		final Map<String, Object> gamePlayerHistoryDTO = new LinkedHashMap<>();
 
 		final List<String> allHitsList = new ArrayList<>();
+		final List<String> allSunkList = new ArrayList<>();
 		final List<Map<String, Object>> eventsList = new ArrayList<>();
 
 
@@ -127,12 +138,11 @@ public class ApiUtils {
 							allHitsList.add(shot);
 							// Update the eventsList with a new event of type hit
 							updateEventsList(eventsList, salvo.getTurn(), ship.getType().toString(), "hit");
-							//eventsList.add(getEventDTO(salvo.getTurn(), ship.getType().toString(), "hit", 1));
 							// Update the eventsList with a new event of type sunk if applicable
 							shipsRemainingSizes.put(ship, shipsRemainingSizes.get(ship) - 1);
 							if (shipsRemainingSizes.get(ship) <= 0) {
 								updateEventsList(eventsList, salvo.getTurn(), ship.getType().toString(), "sunk");
-								// eventsList.add(getEventDTO(salvo.getTurn(), ship.getType().toString(), "sunk", 0));
+								allSunkList.add(ship.getType().toString());
 							}
 						}
 					});
@@ -141,6 +151,7 @@ public class ApiUtils {
 		});
 
 		gamePlayerHistoryDTO.put("allHits", allHitsList);
+		gamePlayerHistoryDTO.put("allSunk", allSunkList);
 
 		// sort the eventsList according to turn, then ship and then type (alphabetically will do because hit comes before sunk)
 		eventsList.sort((a,b) -> {
@@ -158,6 +169,45 @@ public class ApiUtils {
 
 		gamePlayerHistoryDTO.put("events", eventsList);
 		return gamePlayerHistoryDTO;
+	}
+
+	private static GamePlayerState getGameState(GamePlayer currentGamePlayer, GamePlayer otherGamePlayer, int sunkByCurrent, int sunkByOther) {
+
+		if (currentGamePlayer.getShips().size() == 0) {
+			return GamePlayerState.PLACE_SHIPS;
+		}
+
+		if (otherGamePlayer == null || otherGamePlayer.getShips().size() == 0) {
+			return GamePlayerState.WAIT_FOR_PLAYER;
+		}
+
+		int currentShipsRemaining = currentGamePlayer.getShips().size() - sunkByOther;
+		int otherShipsRemaining = otherGamePlayer.getShips().size() - sunkByCurrent;
+
+		if (otherShipsRemaining == 0) {
+			if (currentShipsRemaining == 0) {
+				return GamePlayerState.TIED;
+			} else {
+				return GamePlayerState.WON;
+			}
+		}
+
+		if (currentShipsRemaining == 0) {
+			if (otherShipsRemaining == 0) {
+				return GamePlayerState.TIED;
+			} else {
+				return GamePlayerState.LOST;
+			}
+		}
+
+		int currentSalvoCount = currentGamePlayer.getSalvoes().size();
+		int otherSalvoCount = otherGamePlayer.getSalvoes().size();
+		if (currentSalvoCount <= otherSalvoCount) {
+			return GamePlayerState.FIRE;
+		} else {
+			return  GamePlayerState.WAIT_FOR_TURN;
+		}
+
 	}
 
 	private static void updateEventsList (List<Map<String, Object>> eventsList, int turn, String shipType, String eventType) {
@@ -391,5 +441,57 @@ public class ApiUtils {
 				break;
 		}
 		return new ResponseEntity<>(mapDTO, httpStatus);
+	}
+
+	public static boolean isGameOver(Game game) {
+		List<GamePlayer> gamePlayers = new ArrayList<>(game.getGamePlayers());
+
+		// Only one gamePlayer in game (game is just starting)
+		if (gamePlayers.size() != 2) {
+			return false;
+		}
+
+		// Both gamePlayers don't have the same amount of salvos, so we have an incomplete turn
+		if (gamePlayers.get(0).getSalvoes().size() != gamePlayers.get(1).getSalvoes().size()) {
+			return false;
+		}
+
+		// Check if either player has no ships left (this could mean a tie or an actual winner)
+		if (getRemainingShips(gamePlayers.get(0)) == 0 || getRemainingShips(gamePlayers.get(1)) == 0) {
+			return true;
+		}
+
+		return false;
+	}
+
+	public static int getRemainingShips(GamePlayer currentGamePlayer) {
+
+		IntWrapper remainingShips = new IntWrapper(currentGamePlayer.getShips().size());
+		final Map<Ship, Integer> shipsRemainingSizes = new LinkedHashMap<>();
+		currentGamePlayer.getShips().forEach(ship -> shipsRemainingSizes.put(ship, ship.getType().getLength()));
+
+		GamePlayer otherGamePlayer = currentGamePlayer.getGame().getGamePlayers().stream().filter(gp -> gp != currentGamePlayer).findFirst().orElse(null);
+
+		if (otherGamePlayer == null) {
+			return remainingShips.get();
+		}
+
+		// Now, check if the location of each ship (from gp2) got hit by any shot (location) of each salvo of gp1
+		otherGamePlayer.getSalvoes().stream().sorted(Comparator.comparingInt(Salvo::getTurn)).forEach(salvo -> {
+			salvo.getLocations().forEach(shot -> {
+				currentGamePlayer.getShips().forEach(ship -> {
+					ship.getLocations().forEach(shipLocation -> {
+						if (Objects.equals(shot, shipLocation)) {
+							shipsRemainingSizes.put(ship, shipsRemainingSizes.get(ship) - 1);
+							if (shipsRemainingSizes.get(ship) <= 0) {
+								remainingShips.subtract(1);
+							}
+						}
+					});
+				});
+			});
+		});
+
+		return remainingShips.get();
 	}
 }
