@@ -4,6 +4,7 @@ let gridOffset;
 let $headerOutlet;
 let $infoOutlet;
 let $salvoBtn;
+let $historyTBody;
 let shipGrid;
 let salvoGrid;
 let uppercaseAsciiStart = 65;
@@ -12,6 +13,7 @@ $(function () {
 	$headerOutlet = $('#app-header-outlet');
 	$infoOutlet = $('#app-ship-grid-info');
 	$salvoBtn = $('#app-salvo-btn-container').find('button');
+	$historyTBody = $('#app-history-tbody');
 	$salvoBtn.on('click', SalvoPlacer.onSalvoBtnClick);
 	refreshData();
 });
@@ -50,6 +52,7 @@ function onDataReady(response) {
 	if (data.ships.length > 0) {
 		$('#app-salvo-grid-container').show();
 		displayShips(data.ships);
+		displayHistoryTable(data.history);
 		SalvoPlacer.setupSalvoPlacing();
 	} else {
 		$('#app-salvo-grid-container').hide();
@@ -162,7 +165,7 @@ function placeShot(locationStr, turn, targetGrid, checkHitFunction) {
 }
 
 function ownShotHit(location) {
-	return false;
+	return data.history.current.allHits.includes(location);
 }
 
 function enemyShotHit(location) {
@@ -178,6 +181,124 @@ function getAllShipLocations(ships) {
 		}
 	}
 	return locations;
+}
+
+function displayHistoryTable(historyObj) {
+	$historyTBody.empty();
+	let currentLeftToSink = ShipsInfo.shipTypesObj.length;
+	let otherLeftToSink = currentLeftToSink;
+	
+	let currentEventIndex = 0;
+	let otherEventIndex = 0;
+	
+	for (let turn = 1; turn <= historyObj.turn; ++turn) {
+		let tr = document.createElement('tr');
+		
+		// Turn number
+		appendElementWithTextContent(tr, 'th', turn); 
+		
+		let actionMessage;
+		let events;
+		// YOU columns
+		// Actions
+		actionMessage = "";
+		events = historyObj.current.events;
+		for (let i = currentEventIndex; i < events.length; i++) {
+			let event = events[i];
+			if (event.turn == turn) {
+				if (actionMessage.length > 0) {
+					actionMessage += '<br>';
+				}
+				
+				if (event.type == 'sunk') {
+					actionMessage += '<span class= "app-history-highlight">'
+				}
+				
+				actionMessage += ShipsInfo.getReadableName(event.ship);
+				actionMessage += ' ' + event.type;
+				if (event.type == 'hit' && event.count > 1) {
+					actionMessage += ' ' + event.count + ' times';
+				}
+				actionMessage += '!';
+				
+				if (event.type == 'sunk') {
+					actionMessage += '</span>';
+					--currentLeftToSink;
+				}
+				
+				++currentEventIndex;
+			}
+			else {
+				break;
+			}
+		}
+		
+		if (actionMessage == "") {
+			actionMessage = "Did nothing...";
+		}
+		appendElementWithHtmlContent(tr, 'td', actionMessage);
+		
+		// Left to sink
+		appendElementWithTextContent(tr, 'td', currentLeftToSink);
+		
+		// ENEMY columns
+		// Actions
+		actionMessage = "";
+		events = historyObj.other.events;
+		for (let i = otherEventIndex; i < events.length; i++) {
+			let event = events[i];
+			if (event.turn == turn) {
+				if (actionMessage.length > 0) {
+					actionMessage += '<br>';
+				}
+				
+				if (event.type == 'sunk') {
+					actionMessage += '<span class= "app-history-highlight">'
+				}
+				
+				actionMessage += ShipsInfo.getReadableName(event.ship);
+				actionMessage += " " + event.type;
+				if (event.type == "hit" && event.count > 1) {
+					actionMessage += " " + event.count + " times";
+				}
+				actionMessage += "!";
+				
+				if (event.type == "sunk") {
+					actionMessage += '</span>';
+					--otherLeftToSink;
+				}
+				
+				++otherEventIndex;
+			}
+			else {
+				break;
+			}
+		}
+		if (actionMessage == "") {
+			actionMessage = "Did nothing...";
+		}
+		appendElementWithHtmlContent(tr, 'td', actionMessage);
+		
+		// Left to sink
+		appendElementWithTextContent(tr, 'td', otherLeftToSink);
+		
+		$historyTBody.append(tr);
+	}
+	
+}
+
+function appendElementWithTextContent(parent, elementName, content) {
+	var element = document.createElement(elementName);
+	element.textContent = content;
+	parent.appendChild(element);
+	return element;
+}
+
+function appendElementWithHtmlContent(parent, elementName, content) {
+	var element = document.createElement(elementName);
+	element.innerHTML = content;
+	parent.appendChild(element);
+	return element;
 }
 
 function getNewGrid(gridSize, gridOffset, extraGridClass) {
@@ -269,9 +390,8 @@ function getTileBackgroundClassSuffix(x, xStart, xEnd, y, yStart, yEnd) {
 }
 
 function getCellByName(grid, cellName) {
-	let chars = cellName.split('');
-	let rowIdx = chars[0].charCodeAt() - uppercaseAsciiStart + 1;
-	let colIdx = chars[1];
+	let rowIdx = cellName.slice(0, 1).charCodeAt() - uppercaseAsciiStart + 1;
+	let colIdx = cellName.slice(1);;
 	return getCell(grid, rowIdx, colIdx);
 }
 
@@ -548,6 +668,14 @@ class ShipsInfo {
 		ShipsInfo.shipIndex = 0;
 		ShipsInfo.currentShip = null;
 		ShipsInfo.takenLocations = [];
+	}
+	
+	static getReadableName(shipType) {
+		let index = ShipsInfo.shipTypesObj.indexOf(shipType);
+		if (index == -1) {
+			return "";
+		}
+		return ShipsInfo.shipTypesReadable[index];
 	}
 
 }

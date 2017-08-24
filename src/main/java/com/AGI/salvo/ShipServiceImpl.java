@@ -38,7 +38,8 @@ public class ShipServiceImpl implements ShipService {
 			return ActionResult.CONFLICT;
 		}
 
-		// So, if no errors were found, we actually create and save the ships
+		// So, if no errors were found, we actually finish setting up the ships and save them
+		// Note: the ships should only be missing the gamePlayer
 		ships.forEach(ship -> {
 			ship.setGamePlayer(gamePlayer);
 			gamePlayer.addShip(ship);

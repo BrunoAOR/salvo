@@ -164,7 +164,7 @@ public class SalvoApplication {
 
 			salvoes.add(new Salvo(gp1, 1, Arrays.asList("B5", "C5", "F1")));
 			salvoes.add(new Salvo(gp2, 1, Arrays.asList("B4", "B5", "B6")));
-			salvoes.add(new Salvo(gp1, 2, Arrays.asList("F2", "F5")));
+			salvoes.add(new Salvo(gp1, 2, Arrays.asList("F2", "D5")));
 			salvoes.add(new Salvo(gp2, 2, Arrays.asList("E1", "H3", "A2")));
 
 			salvoes.add(new Salvo(gp3, 1, Arrays.asList("A2", "A4", "G6")));

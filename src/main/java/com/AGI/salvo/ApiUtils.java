@@ -68,13 +68,126 @@ public class ApiUtils {
 		);
 
 
-		final Map<String, Object> allSalvoes = new HashMap<>();
+		final Map<String, Object> allSalvoes = new LinkedHashMap<>();
 		allSalvoes.put(Long.toString(currentGamePlayer.getId()), getGamePlayerSalvoesDTO(currentGamePlayer));
 
 		optionalOtherGamePlayer.ifPresent(gamePlayer ->	allSalvoes.put(Long.toString(gamePlayer.getId()), getGamePlayerSalvoesDTO(gamePlayer)));
 
 		dto.put("salvoes", allSalvoes);
+
+		dto.put("history", getHistoryDTO(currentGamePlayer, optionalOtherGamePlayer.orElse(null)));
+
 		return dto;
+	}
+
+	public static Map<String, Object> getHistoryDTO (GamePlayer currentGamePlayer, GamePlayer otherGamePlayer) {
+		final Map<String, Object> dto = new LinkedHashMap<>();
+
+		if (otherGamePlayer != null) {
+			dto.put("turn", getCurrentTurn(currentGamePlayer.getGame()));
+			dto.put("current", getGamePlayerHistoryDTO(currentGamePlayer, otherGamePlayer));
+			dto.put("other", getGamePlayerHistoryDTO(otherGamePlayer, currentGamePlayer));
+		}
+
+		return dto;
+	}
+
+	private static int getCurrentTurn (Game game) {
+		final IntWrapper turn = new IntWrapper(0);
+
+		game.getGamePlayers().stream().forEach(gamePlayer -> {
+			gamePlayer.getSalvoes().stream().forEach(salvo -> {
+				if (salvo.getTurn() > turn.get()) {
+					turn.set(salvo.getTurn());
+				}
+			});
+		});
+
+		return turn.get();
+	}
+
+	public static Map<String, Object> getGamePlayerHistoryDTO (GamePlayer currentGamePlayer, GamePlayer otherGamePlayer) {
+		final Map<String, Object> gamePlayerHistoryDTO = new LinkedHashMap<>();
+
+		final List<String> allHitsList = new ArrayList<>();
+		final List<Map<String, Object>> eventsList = new ArrayList<>();
+
+
+
+		// Get a map of all of the enemies initial ship sizes
+		final Map<Ship, Integer> shipsRemainingSizes = new LinkedHashMap<>();
+		otherGamePlayer.getShips().stream().forEach(ship -> {
+			shipsRemainingSizes.put(ship, ship.getType().getLength());
+		});
+
+		// Now, check if the location of each ship (from the otherGamePlayer) got hit by any shot (locaiton) of each salvo of the currentGamePlayer
+		currentGamePlayer.getSalvoes().stream().sorted(Comparator.comparingInt(Salvo::getTurn)).forEach(salvo -> {
+			salvo.getLocations().stream().forEach(shot -> {
+				otherGamePlayer.getShips().stream().forEach(ship -> {
+					ship.getLocations().stream().forEach(shipLocation -> {
+						if (Objects.equals(shot, shipLocation)) {
+							// Update the allHitsList
+							allHitsList.add(shot);
+							// Update the eventsList with a new event of type hit
+							updateEventsList(eventsList, salvo.getTurn(), ship.getType().toString(), "hit");
+							//eventsList.add(getEventDTO(salvo.getTurn(), ship.getType().toString(), "hit", 1));
+							// Update the eventsList with a new event of type sunk if applicable
+							shipsRemainingSizes.put(ship, shipsRemainingSizes.get(ship) - 1);
+							if (shipsRemainingSizes.get(ship) <= 0) {
+								updateEventsList(eventsList, salvo.getTurn(), ship.getType().toString(), "sunk");
+								// eventsList.add(getEventDTO(salvo.getTurn(), ship.getType().toString(), "sunk", 0));
+							}
+						}
+					});
+				});
+			});
+		});
+
+		gamePlayerHistoryDTO.put("allHits", allHitsList);
+
+		// sort the eventsList according to turn, then ship and then type (alphabetically will do because hit comes before sunk)
+		eventsList.sort((a,b) -> {
+			int currentCompare = (int)a.get("turn") - (int)b.get("turn");
+			if (currentCompare != 0) {
+				return currentCompare;
+			}
+			currentCompare = ((String)a.get("ship")).compareTo((String)b.get("ship"));
+			if (currentCompare != 0) {
+				return currentCompare;
+			}
+			currentCompare = ((String)a.get("type")).compareTo((String)b.get("type"));
+			return currentCompare;
+		});
+
+		gamePlayerHistoryDTO.put("events", eventsList);
+		return gamePlayerHistoryDTO;
+	}
+
+	private static void updateEventsList (List<Map<String, Object>> eventsList, int turn, String shipType, String eventType) {
+		if (eventType == "sunk") {
+			eventsList.add(getEventDTO(turn, shipType, "sunk", 0));
+		} else if (eventType == "hit") {
+			// Check if a hit already happened on the same turn and ship
+			Optional<Map<String, Object>> optionalEvent = eventsList.stream()
+					.filter(map -> (int)map.get("turn") == turn && Objects.equals((String)map.get("ship"), shipType) && Objects.equals(map.get("type"), eventType))
+					.findFirst();
+			if (optionalEvent.isPresent()) {
+				optionalEvent.get().put("count", (int)optionalEvent.get().get("count") + 1);
+			} else {
+				eventsList.add(getEventDTO(turn, shipType, "hit", 1));
+			}
+		}
+	}
+
+	public static Map<String, Object> getEventDTO (int turn, String shipType, String eventType, int count) {
+		final Map<String, Object> mapDTO = new LinkedHashMap<>();
+		mapDTO.put("turn", turn);
+		mapDTO.put("ship", shipType);
+		mapDTO.put("type", eventType);
+		if (count > 0) {
+			mapDTO.put("count", count);
+		}
+		return mapDTO;
 	}
 
 	public static ResponseEntity<Object> getSignUpPlayerResponse (SignUpPlayerResult signUpPlayerResult) {
@@ -190,7 +303,7 @@ public class ApiUtils {
 		final HttpStatus httpStatus;
 
 		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer) {
-			salvoes = new HashMap<>();
+			salvoes = new LinkedHashMap<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
 			salvoes = getGamePlayerSalvoesDTO(gamePlayer);;
