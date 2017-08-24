@@ -12,9 +12,9 @@ public class SalvoUtils {
 	/**
 	 * This function verifies first whether the salvo locations overlap with each other and then if they overlap with previous salvoes
 	 *
-	 * @param salvo
-	 * @param gamePlayer
-	 * @return
+	 * @param salvo The salvo which is being checked for validity
+	 * @param gamePlayer The gamePlayer who is launching the salvo
+	 * @return A boolean specifying whether the salvo is valid or not
 	 */
 	public static boolean isSalvoValid(Salvo salvo, GamePlayer gamePlayer) {
 
@@ -44,9 +44,9 @@ public class SalvoUtils {
 			previousLocations.addAll(previousSalvo.getLocations());
 		}
 
-		for (int i = 0; i < currentLocations.size(); ++i) {
-			for (int j = 0; j < previousLocations.size(); ++j) {
-				if (Objects.equals(currentLocations.get(i), previousLocations.get(j))) {
+		for (String currentLocation : currentLocations) {
+			for (String previousLocation : previousLocations) {
+				if (Objects.equals(currentLocation, previousLocation)) {
 					// Overlap in current salvo location with previous salvo location
 					return false;
 				}

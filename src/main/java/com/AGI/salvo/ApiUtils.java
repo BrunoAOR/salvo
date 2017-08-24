@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("WeakerAccess")
 public class ApiUtils {
 
 	// Private constructor to avoid instantiation of the class
@@ -95,13 +96,11 @@ public class ApiUtils {
 	private static int getCurrentTurn (Game game) {
 		final IntWrapper turn = new IntWrapper(0);
 
-		game.getGamePlayers().stream().forEach(gamePlayer -> {
-			gamePlayer.getSalvoes().stream().forEach(salvo -> {
-				if (salvo.getTurn() > turn.get()) {
-					turn.set(salvo.getTurn());
-				}
-			});
-		});
+		game.getGamePlayers().forEach(gamePlayer -> gamePlayer.getSalvoes().forEach(salvo -> {
+			if (salvo.getTurn() > turn.get()) {
+				turn.set(salvo.getTurn());
+			}
+		}));
 
 		return turn.get();
 	}
@@ -116,15 +115,13 @@ public class ApiUtils {
 
 		// Get a map of all of the enemies initial ship sizes
 		final Map<Ship, Integer> shipsRemainingSizes = new LinkedHashMap<>();
-		otherGamePlayer.getShips().stream().forEach(ship -> {
-			shipsRemainingSizes.put(ship, ship.getType().getLength());
-		});
+		otherGamePlayer.getShips().forEach(ship -> shipsRemainingSizes.put(ship, ship.getType().getLength()));
 
-		// Now, check if the location of each ship (from the otherGamePlayer) got hit by any shot (locaiton) of each salvo of the currentGamePlayer
+		// Now, check if the location of each ship (from the otherGamePlayer) got hit by any shot (location) of each salvo of the currentGamePlayer
 		currentGamePlayer.getSalvoes().stream().sorted(Comparator.comparingInt(Salvo::getTurn)).forEach(salvo -> {
-			salvo.getLocations().stream().forEach(shot -> {
-				otherGamePlayer.getShips().stream().forEach(ship -> {
-					ship.getLocations().stream().forEach(shipLocation -> {
+			salvo.getLocations().forEach(shot -> {
+				otherGamePlayer.getShips().forEach(ship -> {
+					ship.getLocations().forEach(shipLocation -> {
 						if (Objects.equals(shot, shipLocation)) {
 							// Update the allHitsList
 							allHitsList.add(shot);
@@ -164,12 +161,12 @@ public class ApiUtils {
 	}
 
 	private static void updateEventsList (List<Map<String, Object>> eventsList, int turn, String shipType, String eventType) {
-		if (eventType == "sunk") {
+		if (Objects.equals(eventType, "sunk")) {
 			eventsList.add(getEventDTO(turn, shipType, "sunk", 0));
-		} else if (eventType == "hit") {
+		} else if (Objects.equals(eventType, "hit")) {
 			// Check if a hit already happened on the same turn and ship
 			Optional<Map<String, Object>> optionalEvent = eventsList.stream()
-					.filter(map -> (int)map.get("turn") == turn && Objects.equals((String)map.get("ship"), shipType) && Objects.equals(map.get("type"), eventType))
+					.filter(map -> (int)map.get("turn") == turn && Objects.equals(map.get("ship"), shipType) && Objects.equals(map.get("type"), eventType))
 					.findFirst();
 			if (optionalEvent.isPresent()) {
 				optionalEvent.get().put("count", (int)optionalEvent.get().get("count") + 1);
@@ -234,6 +231,7 @@ public class ApiUtils {
 		return dto;
 	}
 
+
 	public static Map<String, Object> getGamePlayerDTO(GamePlayer gamePlayer) {
 		final Map<String, Object> dto = new LinkedHashMap<>();
 		dto.put("id", gamePlayer.getId());
@@ -268,7 +266,7 @@ public class ApiUtils {
 			mapDTO.put("gpId", createdGamePlayer.get().getId());
 			httpStatus = HttpStatus.CREATED;
 		}
-		return new ResponseEntity<Object>(mapDTO, httpStatus);
+		return new ResponseEntity<>(mapDTO, httpStatus);
 	}
 
 	public static ResponseEntity<Object> getListOfShipsResponse(GamePlayer gamePlayer, Player authenticatedPlayer) {
@@ -279,7 +277,7 @@ public class ApiUtils {
 			ships = new ArrayList<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
-			ships = gamePlayer.getShips().stream().map(ship -> getShipDTO(ship)).collect(Collectors.toList());
+			ships = gamePlayer.getShips().stream().map(ApiUtils::getShipDTO).collect(Collectors.toList());
 			httpStatus = HttpStatus.OK;
 		}
 		return new ResponseEntity<>(ships, httpStatus);
