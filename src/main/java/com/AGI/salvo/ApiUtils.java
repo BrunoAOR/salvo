@@ -69,20 +69,24 @@ public class ApiUtils {
 				.collect(Collectors.toList())
 		);
 
-
-		final Map<String, Object> allSalvoes = new LinkedHashMap<>();
-		allSalvoes.put(Long.toString(currentGamePlayer.getId()), getGamePlayerSalvoesDTO(currentGamePlayer));
-
-		optionalOtherGamePlayer.ifPresent(gamePlayer ->	allSalvoes.put(Long.toString(gamePlayer.getId()), getGamePlayerSalvoesDTO(gamePlayer)));
-
-		dto.put("salvoes", allSalvoes);
-
 		final Map<String,Object> history = getHistoryDTO(currentGamePlayer, optionalOtherGamePlayer.orElse(null));
 		int sunkByCurrent = 0;
 		int sunkByOther = 0;
 		if (history.keySet().size() != 0) {
-			sunkByCurrent = ((List<String>)((Map<String,Object>)history.get("current")).get("allSunk")).size();
-			sunkByOther = ((List<String>)((Map<String,Object>)history.get("other")).get("allSunk")).size();
+			if (history.get("current") instanceof Map) {
+				Map<?,?> currentMap = (Map<?,?>)history.get("current");
+				if (currentMap.get("allSunk") instanceof List) {
+					List<?> currentList = (List<?>)currentMap.get("allSunk");
+					sunkByCurrent = currentList.size();
+				}
+			}
+			if (history.get("other") instanceof Map) {
+				Map<?,?> otherMap = (Map<?,?>)history.get("other");
+				if (otherMap.get("allSunk") instanceof List) {
+					List<?> otherList = (List<?>)otherMap.get("allSunk");
+					sunkByOther = otherList.size();
+				}
+			}
 		}
 
 		dto.put("history", history);
@@ -95,41 +99,62 @@ public class ApiUtils {
 		final Map<String, Object> dto = new LinkedHashMap<>();
 
 		if (otherGamePlayer != null) {
-			dto.put("turn", getCurrentTurn(currentGamePlayer.getGame()));
-			dto.put("current", getGamePlayerHistoryDTO(currentGamePlayer, otherGamePlayer));
-			dto.put("other", getGamePlayerHistoryDTO(otherGamePlayer, currentGamePlayer));
+			dto.put("turn", getLastCompleteTurn(currentGamePlayer.getGame()));
+			dto.put("current", getGamePlayerHistoryDTO(currentGamePlayer, otherGamePlayer, true));
+			dto.put("other", getGamePlayerHistoryDTO(otherGamePlayer, currentGamePlayer, false));
 		}
 
 		return dto;
 	}
 
-	private static int getCurrentTurn (Game game) {
-		final IntWrapper turn = new IntWrapper(0);
+	private static int getLastCompleteTurn(Game game) {
+		final IntWrapper lastCompleteTurn = new IntWrapper(Integer.MAX_VALUE);
 
-		game.getGamePlayers().forEach(gamePlayer -> gamePlayer.getSalvoes().forEach(salvo -> {
-			if (salvo.getTurn() > turn.get()) {
-				turn.set(salvo.getTurn());
+		game.getGamePlayers().forEach(gamePlayer -> {
+			if (gamePlayer.getSalvoes().size() < lastCompleteTurn.get()) {
+				lastCompleteTurn.set(gamePlayer.getSalvoes().size());
 			}
-		}));
+		});
 
-		return turn.get();
+		return lastCompleteTurn.get();
 	}
 
-	public static Map<String, Object> getGamePlayerHistoryDTO (GamePlayer currentGamePlayer, GamePlayer otherGamePlayer) {
+	public static Map<String, Object> getGamePlayerHistoryDTO (GamePlayer firstGamePlayer, GamePlayer otherGamePlayer, boolean isCurrent) {
 		final Map<String, Object> gamePlayerHistoryDTO = new LinkedHashMap<>();
+
+		final Map<String, Object> salvoes = getGamePlayerSalvoesDTO(firstGamePlayer);
+		// If the history is being built for the enemy gamePlayer (isCurrent == false),
+		// then we should omit the last salvo if said salvo's turn is higher
+		// than the amount of salvos the current player (otherGamePlayer in this function call) has shot.
+
+		if (!isCurrent && firstGamePlayer.getSalvoes().size() > otherGamePlayer.getSalvoes().size()) {
+			// We remove the extra salvo which is the one for the last turn
+			// No -1 applied to the size because the salvoes object indexes turn starting at 1
+			String lastTurn = Integer.toString(firstGamePlayer.getSalvoes().size());
+			salvoes.remove(lastTurn);
+		}
+		gamePlayerHistoryDTO.put("salvoes", salvoes);
 
 		final List<String> allHitsList = new ArrayList<>();
 		final List<String> allSunkList = new ArrayList<>();
 		final List<Map<String, Object>> eventsList = new ArrayList<>();
 
+		// One should only pass information for as many salvos as BOTH players have shot
+		int completeTurns =
+				firstGamePlayer.getSalvoes().size() < otherGamePlayer.getSalvoes().size()
+				? firstGamePlayer.getSalvoes().size()
+				: otherGamePlayer.getSalvoes().size();
 
 
 		// Get a map of all of the enemies initial ship sizes
 		final Map<Ship, Integer> shipsRemainingSizes = new LinkedHashMap<>();
 		otherGamePlayer.getShips().forEach(ship -> shipsRemainingSizes.put(ship, ship.getType().getLength()));
 
-		// Now, check if the location of each ship (from the otherGamePlayer) got hit by any shot (location) of each salvo of the currentGamePlayer
-		currentGamePlayer.getSalvoes().stream().sorted(Comparator.comparingInt(Salvo::getTurn)).forEach(salvo -> {
+		// Now, check if the location of each ship (from the otherGamePlayer) got hit by any shot (location) of each salvo of the firstGamePlayer
+		// Get the salvoes that should be evaluated (the last might be ignored if the other player hasn't shot in the turn
+		List<Salvo> sortedSalvos = firstGamePlayer.getSalvoes().stream().sorted(Comparator.comparingInt(Salvo::getTurn)).collect(Collectors.toList());
+		for (int i = 0; i < completeTurns; ++i) {
+			Salvo salvo = sortedSalvos.get(i);
 			salvo.getLocations().forEach(shot -> {
 				otherGamePlayer.getShips().forEach(ship -> {
 					ship.getLocations().forEach(shipLocation -> {
@@ -148,7 +173,7 @@ public class ApiUtils {
 					});
 				});
 			});
-		});
+		}
 
 		gamePlayerHistoryDTO.put("allHits", allHitsList);
 		gamePlayerHistoryDTO.put("allSunk", allSunkList);
@@ -181,33 +206,37 @@ public class ApiUtils {
 			return GamePlayerState.WAIT_FOR_PLAYER;
 		}
 
-		int currentShipsRemaining = currentGamePlayer.getShips().size() - sunkByOther;
-		int otherShipsRemaining = otherGamePlayer.getShips().size() - sunkByCurrent;
-
-		if (otherShipsRemaining == 0) {
-			if (currentShipsRemaining == 0) {
-				return GamePlayerState.TIED;
-			} else {
-				return GamePlayerState.WON;
-			}
-		}
-
-		if (currentShipsRemaining == 0) {
-			if (otherShipsRemaining == 0) {
-				return GamePlayerState.TIED;
-			} else {
-				return GamePlayerState.LOST;
-			}
-		}
 
 		int currentSalvoCount = currentGamePlayer.getSalvoes().size();
 		int otherSalvoCount = otherGamePlayer.getSalvoes().size();
-		if (currentSalvoCount <= otherSalvoCount) {
+		if (currentSalvoCount > otherSalvoCount) {
+			return  GamePlayerState.WAIT_FOR_TURN;
+		} else if (currentSalvoCount < otherSalvoCount) {
 			return GamePlayerState.FIRE;
 		} else {
-			return  GamePlayerState.WAIT_FOR_TURN;
-		}
+			int currentShipsRemaining = currentGamePlayer.getShips().size() - sunkByOther;
+			int otherShipsRemaining = otherGamePlayer.getShips().size() - sunkByCurrent;
 
+			if (otherShipsRemaining == 0) {
+				// otherGamePlayer DEAD
+				if (currentShipsRemaining == 0) {
+					// currentGamePlayer DEAD
+					return GamePlayerState.TIED;
+				} else {
+					// currentGamePlayer ALIVE
+					return GamePlayerState.WON;
+				}
+			} else {
+				// otherGamePlayer ALIVE
+				if (currentShipsRemaining == 0) {
+					// currentGamePlayer DEAD
+					return GamePlayerState.LOST;
+				} else {
+					// currentGamePlayer ALIVE
+					return GamePlayerState.FIRE;
+				}
+			}
+		}
 	}
 
 	private static void updateEventsList (List<Map<String, Object>> eventsList, int turn, String shipType, String eventType) {
@@ -354,7 +383,7 @@ public class ApiUtils {
 			salvoes = new LinkedHashMap<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
-			salvoes = getGamePlayerSalvoesDTO(gamePlayer);;
+			salvoes = getGamePlayerSalvoesDTO(gamePlayer);
 			httpStatus = HttpStatus.OK;
 		}
 		return new ResponseEntity<>(salvoes, httpStatus);

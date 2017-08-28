@@ -73,12 +73,16 @@ body {
 	background-color: rgba(255, 0, 0, 0.8);
 }
 
-.app-shot-failed {
+.app-shot-miss {
 	background-color: rgba(0, 0, 255, 0.75);
 }
 
+.app-shot-wait {
+	background-color: rgba(173, 255, 47, 0.75);
+}
+
 .app-shot-selected {
-	background-color: red;
+	background-color: greenyellow;
 	
 	font-size: 80%;
 	margin: 20%;

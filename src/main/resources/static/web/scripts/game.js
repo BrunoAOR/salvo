@@ -95,7 +95,7 @@ function onDataReady(response) {
 			displayHistoryTable(data.history);
 			
 			// Setup salvoes
-			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			displaySalvoes(data.history);
 			
 			SalvoPlacer.setupSalvoPlacing();
 			break;
@@ -106,7 +106,7 @@ function onDataReady(response) {
 			displayHistoryTable(data.history);
 			
 			// Setup salvoes
-			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			displaySalvoes(data.history);
 			
 			setTimeout(refreshData, dataRefreshRate);
 			
@@ -120,7 +120,7 @@ function onDataReady(response) {
 			displayHistoryTable(data.history);
 			
 			// Setup salvoes
-			displaySalvoes(data.salvoes, data.currentGamePlayer.id, otherGamePlayerId);
+			displaySalvoes(data.history);
 			break;
 	}
 
@@ -209,45 +209,50 @@ function getShipFaceDirection(shipObj) {
 	}
 }
 
-function displaySalvoes(salvoes, currentGpId, otherGpId) {
+function displaySalvoes(historyObj) {
 	// Place own salvoes
-	placeSalvoes(salvoes[currentGpId], salvoGrid, ownShotHit);
-
-	// Place enemy hits
-	if (otherGpId != null) {
-		placeSalvoes(salvoes[otherGpId], shipGrid, enemyShotHit);
-	}
+	placeSalvoes(historyObj.current, salvoGrid, historyObj.turn);
+	
+	// Place enemy salvoes
+	placeSalvoes(historyObj.other, shipGrid, historyObj.turn);
 }
 
-function placeSalvoes(salvoes, targetGrid, checkHitFunction) {
+function placeSalvoes(gamePlayerHistory, targetGrid, lastCompleteTurn) {
+	let salvoes = gamePlayerHistory.salvoes;
 	for (let key in salvoes) {
 		for (let i = 0; i < salvoes[key].length; ++i) {
-			placeShot(salvoes[key][i], key, targetGrid, checkHitFunction);
+			placeShot(salvoes[key][i], key, targetGrid, gamePlayerHistory, lastCompleteTurn);
 		}
 	}
 }
 
-function placeShot(locationStr, turn, targetGrid, checkHitFunction) {
+function placeShot(locationStr, turn, targetGrid, gamePlayerHistory, lastCompleteTurn) {
+	
 	let shot = document.createElement('div');
 	shot.classList.add('app-shot');
-	if (checkHitFunction(locationStr)) {
-		shot.classList.add('app-shot-hit');
-	} else {
-		shot.classList.add('app-shot-failed');
-	}
+	
+	let shotColorClass = getShotColorClass(locationStr, turn, gamePlayerHistory, lastCompleteTurn);
+	shot.classList.add(shotColorClass);
+	
 	shot.textContent = turn;
 
 	let targetCell = getCellByName(targetGrid, locationStr);
 	targetCell.appendChild(shot);
 }
 
-function ownShotHit(location) {
-	return data.history.current.allHits.includes(location);
-}
-
-function enemyShotHit(location) {
-	let locations = getAllShipLocations(data.ships);
-	return locations.includes(location);
+function getShotColorClass(location, turn, gamePlayerHistory, lastCompleteTurn) {
+	if (turn <= lastCompleteTurn) {
+		if(gamePlayerHistory.allHits.includes(location)) {
+			// HIT
+			return 'app-shot-hit';
+		} else {
+			// MISS
+			return 'app-shot-miss';
+		}
+	} else {
+		// WAIT
+		return 'app-shot-wait';
+	}
 }
 
 function getAllShipLocations(ships) {
