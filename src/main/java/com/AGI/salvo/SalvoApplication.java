@@ -261,7 +261,13 @@ class WebAccessConfig extends WebSecurityConfigurerAdapter {
 
 		// Who can see what
 		httpSecurity.authorizeRequests()
-				.antMatchers("/web/game.html").hasAuthority("USER");
+				.antMatchers("/web/games.html").permitAll()
+				.antMatchers("/web/styles/games.css").permitAll()
+				.antMatchers("/web/scripts/games.js").permitAll()
+				.antMatchers("/api/games").permitAll()
+				.antMatchers("/api/login").permitAll()
+				.antMatchers("/api/players").permitAll()
+				.anyRequest().fullyAuthenticated();
 
 		// turn off checking for CSRF tokens
 		httpSecurity.csrf().disable();
