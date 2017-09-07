@@ -29,9 +29,29 @@ import java.util.List;
 @SpringBootApplication
 public class SalvoApplication {
 
+	/*
+	@Autowired
+	private Environment env;
+
+	@Value("${timmy}")	// Used to get a variable from the application-(profile).properties file
+	private String name;
+	*/
+
 	public static void main(String[] args) {
 		SpringApplication.run(SalvoApplication.class, args);
 	}
+
+	/*
+	@PostConstruct
+	public void initApplication() throws IOException {
+		if (env.getActiveProfiles().length == 0) {
+			System.out.println("No Spring profile configured, running with default configuration");
+		}
+		else {
+			System.out.println("Running with Spring profile(s) : " + Arrays.toString(env.getActiveProfiles()));
+		}
+	}
+	*/
 
 	@Bean
 	public CommandLineRunner initData(
@@ -43,6 +63,10 @@ public class SalvoApplication {
 			ScoreRepository scoreRepository
 	) {
 		return (String... args) -> {
+			if (playerRepository.count() != 0)
+			{
+				return;
+			}
 			// Players
 			final Player p1 = new Player("j.bauer@ctu.gov", "24");
 			final Player p2 = new Player("c.obrian@ctu.gov", "42");
@@ -261,12 +285,14 @@ class WebAccessConfig extends WebSecurityConfigurerAdapter {
 
 		// Who can see what
 		httpSecurity.authorizeRequests()
+				.antMatchers("/").permitAll()
 				.antMatchers("/web/games.html").permitAll()
 				.antMatchers("/web/styles/games.css").permitAll()
 				.antMatchers("/web/scripts/games.js").permitAll()
 				.antMatchers("/api/games").permitAll()
 				.antMatchers("/api/login").permitAll()
 				.antMatchers("/api/players").permitAll()
+				.antMatchers("/rest/*").denyAll()
 				.anyRequest().fullyAuthenticated();
 
 		// turn off checking for CSRF tokens
