@@ -14,9 +14,9 @@ public class Game {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
 	private Date creationDate;
-	@OneToMany(mappedBy = "game", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
 	private Set<GamePlayer> gamePlayers = new HashSet<>();
-	@OneToMany(mappedBy = "game", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "game", fetch = FetchType.LAZY)
 	private Set<Score> scores = new HashSet<>();
 
 	public Game() {

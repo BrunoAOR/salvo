@@ -28,7 +28,7 @@ public class Ship {
 	private ShipType type;
 
 	@JoinColumn(name = "game_player_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private GamePlayer gamePlayer;
 
 	@ElementCollection

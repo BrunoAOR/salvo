@@ -13,7 +13,7 @@ public class Salvo {
 	private long id;
 
 	@JoinColumn(name = "gamePlayer_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private GamePlayer gamePlayer;
 
 	private int turn;

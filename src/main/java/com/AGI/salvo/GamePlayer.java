@@ -14,17 +14,17 @@ public class GamePlayer {
 	private Date joinDate;
 
 	@JoinColumn(name = "player_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private Player player;
 
 	@JoinColumn(name = "game_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private Game game;
 
-	@OneToMany(mappedBy = "gamePlayer", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "gamePlayer", fetch = FetchType.LAZY)
 	private Set<Ship> ships = new HashSet<>();
 
-	@OneToMany(mappedBy = "gamePlayer", fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "gamePlayer", fetch = FetchType.LAZY)
 	private Set<Salvo> salvoes = new HashSet<>();
 
 	public GamePlayer() {}

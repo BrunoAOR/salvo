@@ -13,11 +13,11 @@ public class Score {
 	private Date finishDate;
 
 	@JoinColumn(name = "game_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private Game game;
 
 	@JoinColumn(name = "player_id")
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	private Player player;
 
 	public Score() {}
