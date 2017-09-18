@@ -28,7 +28,7 @@ public class GamePlayerServiceImpl implements GamePlayerService {
 	}
 
 	@Override
-	public JoinGameResult JoinGame(Game game, Player player) {
+	public JoinGameResult joinGame(Game game, Player player) {
 		final ActionResult actionResult;
 		GamePlayer gamePlayer = null;
 

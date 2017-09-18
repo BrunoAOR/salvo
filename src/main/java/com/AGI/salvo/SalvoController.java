@@ -1,12 +1,14 @@
 package com.AGI.salvo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -26,12 +28,24 @@ public class SalvoController {
 	@Autowired
 	private ScoreService scoreService;
 
+	@Autowired
+	private DBCache dbCache;
+
 	@RequestMapping(path = "/games", method = RequestMethod.GET)
 	public Map<String, Object> getGamesDTO(Authentication auth) {
+		String playerUserName = ApiUtils.getPlayerUserNameFromAuthenticationObject(auth);
+		if (playerUserName != null) {
+			if (!dbCache.hasPlayerDTO(playerUserName)) {
+				dbCache.addPlayerDTO(playerUserName, ApiUtils.getPlayerDTO(playerService.findByUserName(playerUserName)));
+			}
+		}
 
-		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
-		List<Game> games = gameService.findAll();
-		return ApiUtils.getGamesDTO(authenticatedPlayer, games);
+		if (!dbCache.gamesDTOValid()) {
+			List<Game> games = gameService.findAll();
+			dbCache.updateGamesDTO(ApiUtils.getGamesDTO(games));
+		}
+
+		return ApiUtils.getApiGamesDTO(dbCache.getPlayerDTO(playerUserName), dbCache.getGamesDTO());
 	}
 
 	@RequestMapping(path = "/games", method = RequestMethod.POST)
@@ -39,7 +53,11 @@ public class SalvoController {
 
 		Player currentPlayer = getPlayerFromAuthenticationObject(auth);
 		Optional<GamePlayer> createdGamePlayer = gameService.createGame(currentPlayer);
-		return ApiUtils.getCreatedGameResponse(createdGamePlayer);
+		ResponseEntity<Object> response = ApiUtils.getCreatedGameResponse(createdGamePlayer);
+		if (response.getStatusCode() == HttpStatus.CREATED) {
+			dbCache.gamesDTOValid(false);
+		}
+		return response;
 	}
 
 	@RequestMapping(path = "/games/{gameId}/players", method = RequestMethod.GET)
@@ -54,8 +72,12 @@ public class SalvoController {
 
 		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
 		Game game = authenticatedPlayer == null ? null : gameService.findOne(gameId);
-		JoinGameResult joinGameResult = gamePlayerService.JoinGame(game, authenticatedPlayer);
-		return ApiUtils.getJoinGameResponse(joinGameResult);
+		JoinGameResult joinGameResult = gamePlayerService.joinGame(game, authenticatedPlayer);
+		ResponseEntity<Object> response = ApiUtils.getJoinGameResponse(joinGameResult);
+		if (response.getStatusCode() == HttpStatus.CREATED) {
+			dbCache.gamesDTOValid(false);
+		}
+		return response;
 	}
 
 	@RequestMapping(path = "/games/players/{gamePlayerId}/ships", method = RequestMethod.GET)
@@ -72,7 +94,7 @@ public class SalvoController {
 		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
 		GamePlayer gamePlayer = authenticatedPlayer == null ? null : gamePlayerService.findOne(gamePlayerId);
 		ActionResult actionResult;
-		if (!isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
+		if (!ApiUtils.isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
 			actionResult = ActionResult.UNAUTHORIZED;
 		} else {
 			actionResult = shipService.saveShips(receivedShipList, gamePlayer);
@@ -93,7 +115,7 @@ public class SalvoController {
 		Player authenticatedPlayer = getPlayerFromAuthenticationObject(auth);
 		GamePlayer gamePlayer = authenticatedPlayer == null ? null : gamePlayerService.findOne(gamePlayerId);
 		ActionResult actionResult;
-		if (!isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
+		if (!ApiUtils.isRequestAuthorized(authenticatedPlayer, gamePlayer)) {
 			actionResult = ActionResult.UNAUTHORIZED;
 		} else {
 			actionResult = salvoService.saveSalvo(receivedSalvo, gamePlayer);
@@ -102,6 +124,7 @@ public class SalvoController {
 		if (actionResult == ActionResult.CREATED) {
 			if(ApiUtils.isGameOver(gamePlayer.getGame())) {
 				scoreService.saveScores(gamePlayer.getGame());
+				dbCache.gamesDTOValid(false);
 			}
 		}
 
@@ -124,18 +147,11 @@ public class SalvoController {
 	}
 
 	private Player getPlayerFromAuthenticationObject (Authentication auth) {
-		return isGuest(auth) ? null : playerService.findByUserName(auth.getName());
-	}
-
-	private boolean isGuest(Authentication auth) {
-		return auth == null || auth instanceof AnonymousAuthenticationToken;
-	}
-
-	private boolean isRequestAuthorized(Player authenticatedPlayer, GamePlayer gamePlayer) {
-		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer)  {
-			return false;
-		} else {
-			return true;
+		if (ApiUtils.isGuest(auth)){
+			return null;
 		}
+		return playerService.findByUserName(auth.getName());
 	}
+
+
 }

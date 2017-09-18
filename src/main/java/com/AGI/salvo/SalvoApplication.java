@@ -54,6 +54,11 @@ public class SalvoApplication {
 	*/
 
 	@Bean
+	public DBCache CreateDBCache() {
+		return new DBCache();
+	}
+
+	@Bean
 	public CommandLineRunner initData(
 			PlayerRepository playerRepository,
 			GameRepository gameRepository,

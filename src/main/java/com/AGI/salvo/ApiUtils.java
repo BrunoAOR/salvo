@@ -2,6 +2,8 @@ package com.AGI.salvo;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,12 +14,15 @@ public class ApiUtils {
 	// Private constructor to avoid instantiation of the class
 	private ApiUtils() {}
 
-	public static Map<String, Object> getGamesDTO (Player authenticatedPlayer, List<Game> games) {
+	private static Map<String, Object> apiGamesResponse;
+	private static boolean apiGamesResponseChanged = true;
+
+	public static Map<String, Object> getApiGamesDTO(Map<String, Object> playerDTO, List<Object> gamesDTO) {
 		final Map<String, Object> mapDTO = new LinkedHashMap<>();
-		if (authenticatedPlayer != null) {
-			mapDTO.put("player", getPlayerDTO(authenticatedPlayer));
+		if (playerDTO != null) {
+			mapDTO.put("player", playerDTO);
 		}
-		mapDTO.put("games", getGamesDTO(games));
+		mapDTO.put("games", gamesDTO);
 		return mapDTO;
 	}
 
@@ -32,7 +37,7 @@ public class ApiUtils {
 		if (authenticatedPlayer == null) {
 			mapDTO.put("error", "User must log in!");
 			httpStatus = HttpStatus.UNAUTHORIZED;
-		} else if (gamePlayer.getPlayer() != authenticatedPlayer) {
+		} else if (gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
 			// The signed in player is requesting for a game_view for a gamePlayer that is not his
 			mapDTO.put("error", "Unauthorized to view game info from this player's perspective!");
 			httpStatus = HttpStatus.UNAUTHORIZED;
@@ -352,7 +357,7 @@ public class ApiUtils {
 		final List<Object> ships;
 		final HttpStatus httpStatus;
 
-		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer) {
+		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
 			ships = new ArrayList<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
@@ -379,7 +384,7 @@ public class ApiUtils {
 		final Map<String, Object> salvoes;
 		final HttpStatus httpStatus;
 
-		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer() != authenticatedPlayer) {
+		if (authenticatedPlayer == null || gamePlayer == null || gamePlayer.getPlayer().getId() != authenticatedPlayer.getId()) {
 			salvoes = new LinkedHashMap<>();
 			httpStatus = HttpStatus.UNAUTHORIZED;
 		} else {
@@ -522,5 +527,20 @@ public class ApiUtils {
 		});
 
 		return remainingShips.get();
+	}
+
+	public static String getPlayerUserNameFromAuthenticationObject (Authentication auth) {
+		if (isGuest(auth)){
+			return null;
+		}
+		return auth.getName();
+	}
+
+	public static boolean isGuest(Authentication auth) {
+		return auth == null || auth instanceof AnonymousAuthenticationToken;
+	}
+
+	public static boolean isRequestAuthorized(Player authenticatedPlayer, GamePlayer gamePlayer) {
+		return authenticatedPlayer != null && gamePlayer != null && gamePlayer.getPlayer().getId() == authenticatedPlayer.getId();
 	}
 }
